@@ -9,6 +9,7 @@
 	<meta name='copyright' content='FCOO'>
 	<meta name='owner' content='FCOO'>
 
+  <link  href="modernizr-mediaquery.css" rel="stylesheet">	
   <link  href="bower_components.css" rel="stylesheet">	
   <link  href="../src/leaflet-multi-maps.css" rel="stylesheet">	
   <style>
@@ -41,6 +42,12 @@
 	<script src="bower_components.js"></script>
 	<script src="../src/leaflet-multi-maps.js"></script>
 	<script>
+        var mmq = new window.ModernizrMediaquery();
+        mmq.on( 'landscape portrait', function( m ){ 
+            console.log('Is now in '+m+'-mode') ;
+        });
+        mmq._onMediaQuery();
+
     $(function() {
 		var myMultiMaps = L.multiMaps( '#multi-map-container' /*, options */ );
         var map;
