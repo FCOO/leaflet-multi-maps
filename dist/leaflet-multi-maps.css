@@ -1,0 +1,243 @@
+/***********************************************
+    leaflet-multi-maps.scss, 
+
+    (c) 2016, FCOO
+
+    https://github.com/FCOO/leaflet-multi-maps
+    https://github.com/FCOO
+
+
+************************************************/
+/*
+css for different setups of maps.
+In landscape mode it is by columns. In portrait mode it is by rows.
+The order of the columns is changed when class 'multi-map-reverse' is added
+1. col     : 2 or 3 small maps
+2. - 4. col: 1 map
+5. col     : 2 small maps
+
+There are 11 different setups
+NAME  col#1  col#2  col#3  col#4  col#5
+----- ------ ------ ------ ------ ------ 
+1            show   
+1-1          show   show
+1-1-1        show   show   show
+2-1   show 2 show
+3-1   show 3 show
+2-2   show 2                      show 
+2-1-1 show 2 show   show
+2-1-2 show 2 show                 show
+
+1-2   = 2-1 + multi-map-reverse
+1-3   = 3-1 + multi-map-reverse
+1-1-2 = 2-1-1 + multi-map-reverse
+
+The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <html class="multi-map-3-1">
+*/
+.multi-map-outer-container,
+.multi-map-sub-container {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden; }
+  .multi-map-outer-container:before, .multi-map-outer-container:after,
+  .multi-map-sub-container:before,
+  .multi-map-sub-container:after {
+    content: "";
+    display: block;
+    overflow: hidden; }
+  .multi-map-outer-container:after,
+  .multi-map-sub-container:after {
+    clear: both; }
+
+.landscape .multi-map-outer-container {
+  flex-direction: row; }
+
+.landscape.multi-map-reverse .multi-map-outer-container {
+  flex-direction: row-reverse; }
+
+.portrait .multi-map-outer-container {
+  flex-direction: column; }
+
+.portrait.multi-map-reverse .multi-map-outer-container {
+  flex-direction: column-reverse; }
+
+.landscape .multi-map-outer-container .multi-map-sub-container {
+  flex-direction: column; }
+
+.portrait .multi-map-outer-container .multi-map-sub-container {
+  flex-direction: row; }
+
+.landscape .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+  width: 100%;
+  height: 50%; }
+
+.portrait .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+  width: 50%;
+  height: 100%; }
+
+.landscape.multi-map-3-1 .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+  height: 33.3333333333%; }
+
+.portrait.multi-map-3-1 .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+  width: 33.3333333333%; }
+
+.multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:last-child {
+  display: none; }
+  .multi-map-3-1 .multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:last-child {
+    display: block; }
+
+.multi-map-outer-container .multi-map-container, .multi-map-outer-container .multi-map-sub-container {
+  text-align: center;
+  box-sizing: border-box;
+  flex: 0 0 auto; }
+
+.multi-map-outer-container .multi-map-container .leaflet-container {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0; }
+
+.multi-map-outer-container .leaflet-container {
+  box-sizing: border-box;
+  border: 1px solid black; }
+
+.landscape .multi-map-outer-container > .multi-map-container, .landscape .multi-map-outer-container > .multi-map-sub-container {
+  height: 100%; }
+
+.portrait .multi-map-outer-container > .multi-map-container, .portrait .multi-map-outer-container > .multi-map-sub-container {
+  width: 100%; }
+
+.multi-map-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 100%; }
+
+.multi-map-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 100%; }
+
+.multi-map-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 50%; }
+
+.multi-map-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 50%; }
+
+.multi-map-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  width: 50%; }
+
+.multi-map-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  height: 50%; }
+
+.multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 33.3333333333%; }
+
+.multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 33.3333333333%; }
+
+.multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  width: 33.3333333333%; }
+
+.multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  height: 33.3333333333%; }
+
+.multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-4, .multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
+  width: 33.3333333333%; }
+
+.multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-4, .multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
+  height: 33.3333333333%; }
+
+.multi-map-2-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 33.3333333333%; }
+
+.multi-map-2-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 33.3333333333%; }
+
+.multi-map-2-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 66.6666666667%; }
+
+.multi-map-2-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 66.6666666667%; }
+
+.multi-map-3-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 25%; }
+
+.multi-map-3-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 25%; }
+
+.multi-map-3-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 75%; }
+
+.multi-map-3-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 75%; }
+
+.multi-map-2-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 50%; }
+
+.multi-map-2-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 50%; }
+
+.multi-map-2-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  width: 50%; }
+
+.multi-map-2-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  height: 50%; }
+
+.multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 20%; }
+
+.multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 20%; }
+
+.multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 40%; }
+
+.multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 40%; }
+
+.multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  width: 40%; }
+
+.multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  height: 40%; }
+
+.multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 25%; }
+
+.multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 25%; }
+
+.multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 50%; }
+
+.multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 50%; }
+
+.multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  width: 25%; }
+
+.multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  height: 25%; }
+
+[class*=' multi-map-1'] .multi-map-outer-container > .multi-map-container.multi-map-1, [class*=' multi-map-1'] .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  display: none; }
+
+.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  display: none; }
+
+.multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  display: none; }
+
+[class*=' multi-map-'][class*='1-1'] .multi-map-outer-container > .multi-map-container.multi-map-3, [class*=' multi-map-'][class*='1-1'] .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  display: block; }
+
+.multi-map-outer-container > .multi-map-container.multi-map-4, .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
+  display: none; }
+
+.multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.multi-map-4, .multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
+  display: block; }
+
+.multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  display: none; }
+
+.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5, .multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  display: flex; }

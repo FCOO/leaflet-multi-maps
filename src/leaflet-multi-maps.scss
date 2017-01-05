@@ -1,0 +1,183 @@
+/***********************************************
+    leaflet-multi-maps.scss, 
+
+    (c) 2016, FCOO
+
+    https://github.com/FCOO/leaflet-multi-maps
+    https://github.com/FCOO
+
+
+************************************************/
+//BOURBON - http://bourbon.io/
+@import "../bower_components/bourbon/app/assets/stylesheets/bourbon";
+
+//MODERNIZR-MIXIN - https://github.com/danielguillan/modernizr-mixin
+@import "../bower_components/modernizr-mixin/stylesheets/modernizr";
+
+//MATHSASS - https://github.com/terkel/mathsass
+@import "../bower_components/mathsass/dist/math";
+
+/*
+css for different setups of maps.
+In landscape mode it is by columns. In portrait mode it is by rows.
+The order of the columns is changed when class 'multi-map-reverse' is added
+1. col     : 2 or 3 small maps
+2. - 4. col: 1 map
+5. col     : 2 small maps
+
+There are 11 different setups
+NAME  col#1  col#2  col#3  col#4  col#5
+----- ------ ------ ------ ------ ------ 
+1            show   
+1-1          show   show
+1-1-1        show   show   show
+2-1   show 2 show
+3-1   show 3 show
+2-2   show 2                      show 
+2-1-1 show 2 show   show
+2-1-2 show 2 show                 show
+
+1-2   = 2-1 + multi-map-reverse
+1-3   = 3-1 + multi-map-reverse
+1-1-2 = 2-1-1 + multi-map-reverse
+
+The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <html class="multi-map-3-1">
+*/
+
+
+//Flex container
+.multi-map-outer-container,
+.multi-map-sub-container {
+    &:before, &:after {
+        content: "";
+        display: block;
+        overflow: hidden;
+    }
+    &:after { clear: both; }
+
+    display  : flex;
+    flex-wrap: nowrap;
+    width    : 100%;
+    height   : 100%;
+  
+    box-sizing: border-box;
+    overflow  : hidden;
+
+
+}
+
+.multi-map-outer-container { 
+    .landscape                   & { flex-direction: row;}
+    .landscape.multi-map-reverse & { flex-direction: row-reverse;}
+    .portrait                    & { flex-direction: column;}
+    .portrait.multi-map-reverse  & { flex-direction: column-reverse;}
+
+    .multi-map-sub-container {
+        .landscape & { flex-direction: column;}
+        .portrait  & { flex-direction: row;}
+
+        .multi-map-container {
+            .landscape & { 
+                width : ( 100% / 1);
+                height: ( 100% / 2);
+             }
+            .portrait & { 
+                width : ( 100% / 2);
+                height: ( 100% / 1);
+            }
+
+            .landscape.multi-map-3-1 & { height: ( 100% / 3); }
+            .portrait.multi-map-3-1 &  { width : ( 100% / 3); }
+        }
+        //Last mini-map in first coloum is only visible on multi-map-3-1
+        &:first-child .multi-map-container:last-child { 
+            display: none; 
+            .multi-map-3-1 & { display: block; }
+        }
+    }
+
+
+    .multi-map-container, .multi-map-sub-container {
+        text-align: center;
+        
+        box-sizing: border-box;
+        flex: 0 0 auto;
+    }
+
+    .multi-map-container .leaflet-container {
+        width: 100%; height:100%; margin: 0; padding: 0;
+    }    
+
+    //Add border to leaflet-containers
+    & .leaflet-container {
+        box-sizing: border-box;
+        border: 1px solid black;
+    }
+
+
+    >.multi-map-container, >.multi-map-sub-container {
+        //Default width and height
+        .landscape & { height: 100%; }
+        .portrait  & { width : 100%; }
+
+        @mixin dimention($multi-map-style, $multi-map-class, $quotients, $denominator) {
+            .#{$multi-map-style}.landscape &.#{$multi-map-class} { width : ($quotients / $denominator * 100% ); }
+            .#{$multi-map-style}.portrait &.#{$multi-map-class}  { height: ($quotients / $denominator * 100% ); }
+        }
+
+        //multi-map-1
+        @include dimention(multi-map-1, multi-map-2, 1, 1);
+        
+        //multi-map-1-1
+        @include dimention(multi-map-1-1, multi-map-2, 1, 2);
+        @include dimention(multi-map-1-1, multi-map-3, 1, 2);
+        
+        //multi-map-1-1-1
+        @include dimention(multi-map-1-1-1, multi-map-2, 1, 3);
+        @include dimention(multi-map-1-1-1, multi-map-3, 1, 3);
+        @include dimention(multi-map-1-1-1, multi-map-4, 1, 3);
+
+        //multi-map-2-1
+        @include dimention(multi-map-2-1, multi-map-1, 1, 3);
+        @include dimention(multi-map-2-1, multi-map-2, 2, 3);
+
+        //multi-map-3-1
+        @include dimention(multi-map-3-1, multi-map-1, 1, 4);
+        @include dimention(multi-map-3-1, multi-map-2, 3, 4);
+        
+        //multi-map-2-2
+        @include dimention(multi-map-2-2, multi-map-1, 1, 2);
+        @include dimention(multi-map-2-2, multi-map-5, 1, 2);
+        
+        //multi-map-2-1-1
+        @include dimention(multi-map-2-1-1, multi-map-1, 1, 5);
+        @include dimention(multi-map-2-1-1, multi-map-2, 2, 5);
+        @include dimention(multi-map-2-1-1, multi-map-3, 2, 5);
+        
+        //multi-map-2-1-2
+        @include dimention(multi-map-2-1-2, multi-map-1, 1, 4);
+        @include dimention(multi-map-2-1-2, multi-map-2, 2, 4);
+        @include dimention(multi-map-2-1-2, multi-map-5, 1, 4);
+        
+        
+        
+        //Display 
+        //1. col: hidden for any 1-x-y 
+        [class*=' multi-map-1'] &.multi-map-1 { display: none }
+    
+        //2. col: Only hidden for multi-map-2-2
+        .multi-map-2-2 &.multi-map-2 { display: none }
+
+        //3. col: Hidden except for 1-1, 1-1-1, 2-1-1
+        &.multi-map-3 {display: none; }
+        [class*=' multi-map-'][class*='1-1'] &.multi-map-3 { display: block }
+
+        //4. col: Hidden except for 1-1-1
+        &.multi-map-4 {display: none; }
+        .multi-map-1-1-1 &.multi-map-4 { display: block }
+
+        //5. col: Hidden except for 2-2, 2-1-2
+        &.multi-map-5 {display: none; }
+        .multi-map-2-2 &.multi-map-5, .multi-map-2-1-2 &.multi-map-5 { display: flex }
+    }
+}

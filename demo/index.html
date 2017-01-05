@@ -1,0 +1,92 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="da" class="" style="margin:0; padding:0; width:100%; height:100%; font-size: 100%">
+<head>
+	<title>fcoo.dk - leaflet-multi-maps - Demo</title>
+	<meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv='x-dns-prefetch-control' content='on'>
+
+	<meta name='copyright' content='FCOO'>
+	<meta name='owner' content='FCOO'>
+
+  <link  href="bower_components.css" rel="stylesheet">	
+  <link  href="../src/leaflet-multi-maps.css" rel="stylesheet">	
+  <style>
+        .changeButton {
+            position: absolute;
+            left: 50px; top: 10px;
+            z-index: 2;
+        }
+        .testBox {
+            position: absolute;
+            left: 100px; top: 100px;
+            width: 30px; height:100px;
+            border: 1px solid black;
+            z-index: 3;
+            transition: width 0.25s ease-in-out;
+
+        }
+  </style>
+</head>
+
+<body  style="margin:0; padding:0; height:100%; width:100%">
+<button class="changeButton">Click to change</button>
+
+<div id="multi-map-container" style="position: absolute; top:0; left:0; z-index:1">
+</div>    
+
+
+	
+	<script src="modernizr.js"></script>
+	<script src="bower_components.js"></script>
+	<script src="../src/leaflet-multi-maps.js"></script>
+	<script>
+    $(function() {
+		var myMultiMaps = L.multiMaps( '#multi-map-container' /*, options */ );
+        var map;
+        
+        map = myMultiMaps.addMap();
+        map.setView([56.2, 11.5], 6);
+		L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+        
+		map = myMultiMaps.addMap();
+        map.setView([56.2, 11.5], 6);
+        L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+		map = myMultiMaps.addMap();
+        map.setView([56.2, 11.5], 6);
+        L.tileLayer('http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 }).addTo(map);
+
+		map = myMultiMaps.addMap();
+        map.setView([56.2, 11.5], 6);
+        L.tileLayer('http://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.{ext}', {
+	        subdomains: 'abcd',
+	        minZoom: 1,
+	        maxZoom: 16,
+	        ext: 'png'
+        }).addTo(map);
+
+		map = myMultiMaps.addMap();
+        map.setView([56.2, 11.5], 6);
+        L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
+
+        
+    
+        var testIndex = -1;
+        function onClick(){ 
+            testIndex++;
+            if (testIndex >= myMultiMaps.setupList.length)
+              testIndex = 0;
+            myMultiMaps.set( myMultiMaps.setupList[testIndex].id );
+        }
+        onClick();
+        $('.changeButton').on('click', onClick);
+
+
+    });
+
+	</script>
+</body>
+</html>
+
