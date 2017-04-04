@@ -32,7 +32,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
 1-3   = 3-1 + multi-map-reverse
 1-1-2 = 2-1-1 + multi-map-reverse
 
-The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <html class="multi-map-3-1">
+The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <html class="multi-map-3-1">
 */
 .multi-map-outer-container,
 .multi-map-sub-container {
@@ -99,10 +99,6 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <h
   height: 100%;
   margin: 0;
   padding: 0; }
-
-.multi-map-outer-container .leaflet-container {
-  box-sizing: border-box;
-  border: 1px solid black; }
 
 .landscape .multi-map-outer-container > .multi-map-container, .landscape .multi-map-outer-container > .multi-map-sub-container {
   height: 100%; }
@@ -241,3 +237,30 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <h
 
 .multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5, .multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   display: flex; }
+
+.multi-map-outer-container .leaflet-container {
+  box-sizing: border-box;
+  border: none; }
+
+.multi-map-outer-container {
+  border: 1px solid black; }
+  .landscape:not(.multi-map-reverse) .multi-map-outer-container > .multi-map-sub-container:not(:first-child), .landscape:not(.multi-map-reverse) .multi-map-outer-container > .multi-map-container:not(.multi-map-2):not(:first-child) {
+    border-left: 1px solid black; }
+  .landscape.multi-map-reverse .multi-map-outer-container > .multi-map-sub-container:not(:first-child), .landscape.multi-map-reverse .multi-map-outer-container > .multi-map-container:not(.multi-map-2):not(:first-child) {
+    border-right: 1px solid black; }
+  .portrait:not(.multi-map-reverse) .multi-map-outer-container > .multi-map-sub-container:not(:first-child), .portrait:not(.multi-map-reverse) .multi-map-outer-container > .multi-map-container:not(.multi-map-2):not(:first-child) {
+    border-top: 1px solid black; }
+  .portrait.multi-map-reverse .multi-map-outer-container > .multi-map-sub-container:not(:first-child), .portrait.multi-map-reverse .multi-map-outer-container > .multi-map-container:not(.multi-map-2):not(:first-child) {
+    border-bottom: 1px solid black; }
+  .landscape:not(.multi-map-reverse):not(.multi-map-2-2) .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+    border-right: 1px solid black; }
+  .landscape.multi-map-reverse .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+    border-left: 1px solid black; }
+  .portrait:not(.multi-map-reverse):not(.multi-map-2-2) .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+    border-bottom: 1px solid black; }
+  .portrait.multi-map-reverse .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+    border-top: 1px solid black; }
+  .landscape .multi-map-outer-container .multi-map-sub-container .multi-map-container:not(:first-child) {
+    border-top: 1px solid black; }
+  .portrait .multi-map-outer-container .multi-map-sub-container .multi-map-container:not(:first-child) {
+    border-left: 1px solid black; }

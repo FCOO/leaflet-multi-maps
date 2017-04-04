@@ -17,10 +17,10 @@ http://FCOO.github.io/leaflet-multi-maps/demo/
 ## Usage
 
     var myLeafletMultiMaps = L.multiMaps( "containerId" );
-    var map = myLeafletMultiMaps.addMap();
+    var map = myLeafletMultiMaps.addMap( optionsForMap );
     //Set options and layers for 1. map
 
-    map = myLeafletMultiMaps.addMap();
+    map = myLeafletMultiMaps.addMap( optionsForMap );
     //Set options and layers for 2. map
     ...
 

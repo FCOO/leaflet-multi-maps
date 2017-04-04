@@ -48,26 +48,41 @@ NAME  col#1  col#2  col#3  col#4  col#5
     });
 
 
+    //Default update-function
+    function multiMaps_update( index, map, $container ){ 
+        if (map){
+            $container.append( $(map.getContainer())  );
+            map._onResize();
+        }
+    }
 
     //Extend base leaflet class
     L.MultiMaps = L.Class.extend({
         setups   : multiMapsSetups,
         setupList: multiMapsSetupList,
-        mapList  : [],
         setup    : null,
     
         //Default options
         options: {
-            VERSION: "1.0.1",
+            VERSION: "1.1.0",
             id     : multiMapsSetupList[0].id
         },
 
         //initialize
         initialize: function( container, options ) {
+
             L.setOptions(this, options);
 
             this.$container = container instanceof $ ? container : $(container);
+            this.mapList    = [];
+            this.update     = options && options.update ? options.update : multiMaps_update;
 
+            this.build( this.$container );
+            this.set( this.options.id );            
+        },
+
+        //build - build the html inside container
+        build: function( container ){
             /*
             Build the element inside $container to hold the different maps
 
@@ -84,7 +99,9 @@ NAME  col#1  col#2  col#3  col#4  col#5
                 <div class="multi-map-container multi-map-5-2"></div>
             </div>    
             */
-            this.$container.addClass('multi-map-outer-container');
+            var $container = container instanceof $ ? container : $(container);
+
+            $container.addClass('multi-map-outer-container');
 
             var $col = $('<div class="multi-map-sub-container multi-map-1"></div>');
             $col
@@ -92,7 +109,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
                 .append( $('<div class="multi-map-container multi-map-1-2"></div>') )
                 .append( $('<div class="multi-map-container multi-map-1-3"></div>') );
 
-            this.$container
+            $container
                 .append( $col)
                 .append( $('<div class="multi-map-container multi-map-2"></div>') )
                 .append( $('<div class="multi-map-container multi-map-3"></div>') )
@@ -103,15 +120,13 @@ NAME  col#1  col#2  col#3  col#4  col#5
                 .append( $('<div class="multi-map-container multi-map-5-1"></div>') )
                 .append( $('<div class="multi-map-container multi-map-5-2"></div>') );
 
-            this.$container.append( $col);
+            $container.append( $col);
 
-            this.set( this.options.id );            
         },
 
 
         addMap: function ( options ){
-            var $container = $('<div></div>'),
-                map = L.map( $container[0], options );
+            var map = L.map( $('<div/>')[0], options );
             this.mapList.push( map );
 
             return map;
@@ -128,9 +143,9 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //set
         set: function ( id ) {
-            var map, 
-                $map_container,
-                $map_container_container;
+            var i, 
+                map, 
+                $map_container;
 
             if (!this.setups[id])
                 return;
@@ -145,26 +160,28 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
             $html.addClass( this.setup.className );
 
-            for (var i=0; i<this.mapList.length; i++ ){
+            //Remove the maps (if any) from its current container
+            for (i=0; i<this.mapList.length; i++ ){
                 map = this.mapList[i];
-                $map_container = $(map._container);
+                $map_container = $(map.getContainer());
     
-                //Remove the map from its current container
                 if ($map_container.parent().length )
                     $map_container.detach();
-
-                if (this.setup.mapClassNamePostfix.length > i){
-                    $map_container_container = $('.multi-map-'+this.setup.mapClassNamePostfix[i]);
-                    $map_container_container.append ( $map_container );
-                    map._onResize();
-                }
             }
+
+            //Call this.update for all visible sub-maps
+            for (i=0; i<this.setup.mapClassNamePostfix.length; i++ )
+                this.update.call( this, 
+                    /*index     :*/ i, 
+                    /*map       :*/ this.mapList && (i < this.mapList.length) ? this.mapList[i] : null,
+                    /*$container:*/ this.$container.find('.multi-map-'+this.setup.mapClassNamePostfix[i] ) 
+                ); 
         }
 
     });
 
-    L.multiMaps = function ( options ) {
-        return new L.MultiMaps( options );
+    L.multiMaps = function ( container, options ) {
+        return new L.MultiMaps( container, options );
     };
 
 }(jQuery, L, this, document));

@@ -25,15 +25,24 @@
             border: 1px solid black;
             z-index: 3;
             transition: width 0.25s ease-in-out;
-
         }
+        #mini-multi-map-container .multi-map-container {
+            background-color: #BBB;
+            text-align: center;
+            font-size: 20px;
+        }
+        
   </style>
 </head>
 
 <body  style="margin:0; padding:0; height:100%; width:100%">
 <button class="changeButton">Click to change</button>
 
-<div id="multi-map-container" style="position: absolute; top:0; left:0; z-index:1">
+<div id="my-multi-map-container" style="position: absolute; top:0; left:0; z-index:1">
+</div>    
+
+<div style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box">
+    <div id="my-mini-multi-map-container" style="width:80px; height:60px"></div>    
 </div>    
 
 
@@ -42,15 +51,43 @@
 	<script src="bower_components.js"></script>
 	<script src="../src/leaflet-multi-maps.js"></script>
 	<script>
+
+
+
+    $(function() {
         var mmq = new window.ModernizrMediaquery();
         mmq.on( 'landscape portrait', function( m ){ 
             console.log('Is now in '+m+'-mode') ;
         });
+
+        mmq.on( 'landscape portrait', function( m ){ 
+            var w = screen.availWidth, //$(document.body).innerWidth(),
+                h = screen.availHeight, //$(document.body).innerHeight(),
+                r = h/w,
+                p = r > 1,
+                min = 60,
+                max = 80,
+                minD = min,
+                maxD = min*(p ? r : 1/r ); //Math.min( max, minD*Math.max( w, h )/Math.min( w, h ) );
+            $('#my-mini-multi-map-container')
+                .height( p ? maxD : minD )
+                .width( p ? minD : maxD );
+console.log('wxh=',w+'x'+h, 'minDxmaxDh=',minD+'x'+maxD, w/h, p? minD/maxD : maxD/minD);
+        });
+        
         mmq._onMediaQuery();
 
-    $(function() {
-		var myMultiMaps = L.multiMaps( '#multi-map-container' /*, options */ );
-        var map;
+
+
+        
+        var myMultiMaps = L.multiMaps( '#my-multi-map-container' /*, options */ ),
+            myMiniMultiMaps = L.multiMaps( 
+                $('#my-mini-multi-map-container'), {
+                    update: function( index, map, $container ){
+                                $container.html( index );
+                            }
+                }),
+            map;
         
         map = myMultiMaps.addMap();
         map.setView([56.2, 11.5], 6);
@@ -78,7 +115,7 @@
         map.setView([56.2, 11.5], 6);
         L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
 
-        
+
     
         var testIndex = -1;
         function onClick(){ 
@@ -86,6 +123,10 @@
             if (testIndex >= myMultiMaps.setupList.length)
               testIndex = 0;
             myMultiMaps.set( myMultiMaps.setupList[testIndex].id );
+
+            myMiniMultiMaps.set( myMultiMaps.setupList[testIndex].id );
+
+            document.title = myMultiMaps.setupList[testIndex].id;
         }
         onClick();
         $('.changeButton').on('click', onClick);

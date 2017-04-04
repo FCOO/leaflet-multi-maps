@@ -41,7 +41,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
 1-3   = 3-1 + multi-map-reverse
 1-1-2 = 2-1-1 + multi-map-reverse
 
-The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <html class="multi-map-3-1">
+The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <html class="multi-map-3-1">
 */
 
 
@@ -108,13 +108,6 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <h
         width: 100%; height:100%; margin: 0; padding: 0;
     }    
 
-    //Add border to leaflet-containers
-    & .leaflet-container {
-        box-sizing: border-box;
-        border: 1px solid black;
-    }
-
-
     >.multi-map-container, >.multi-map-sub-container {
         //Default width and height
         .landscape & { height: 100%; }
@@ -179,5 +172,39 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. Eq. <h
         //5. col: Hidden except for 2-2, 2-1-2
         &.multi-map-5 {display: none; }
         .multi-map-2-2 &.multi-map-5, .multi-map-2-1-2 &.multi-map-5 { display: flex }
+    }
+
+
+    & .leaflet-container {
+        box-sizing: border-box;
+        border: none;
+    }
+}
+
+//Adjusting border to collaps borders
+$border: 1px solid black;
+
+.multi-map-outer-container {
+    border: $border;
+
+    >.multi-map-sub-container, >.multi-map-container:not(.multi-map-2) {    
+        .landscape:not(.multi-map-reverse) &:not(:first-child) { border-left  : $border; }
+        .landscape.multi-map-reverse       &:not(:first-child) { border-right : $border; }
+        .portrait:not(.multi-map-reverse)  &:not(:first-child) { border-top   : $border; }
+        .portrait.multi-map-reverse        &:not(:first-child) { border-bottom: $border; }
+    }
+
+    //Special case for multi-map-sub-container multi-map-1: Is the first child and must have border to neighbor except in 2-2 mode
+    & >.multi-map-sub-container.multi-map-1 {
+        .landscape:not(.multi-map-reverse):not(.multi-map-2-2 ) & { border-right : $border; }
+        .landscape.multi-map-reverse                            & { border-left  : $border; }
+        .portrait:not(.multi-map-reverse):not(.multi-map-2-2 )  & { border-bottom: $border; }
+        .portrait.multi-map-reverse                             & { border-top   : $border; }
+    }
+    
+    //Inner borders between the small maps    
+    .multi-map-sub-container .multi-map-container {    
+        .landscape &:not(:first-child) { border-top: $border; }
+        .portrait &:not(:first-child) { border-left: $border; }
     }
 }
