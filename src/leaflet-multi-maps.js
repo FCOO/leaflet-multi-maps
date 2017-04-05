@@ -65,7 +65,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
         //Default options
         options: {
             VERSION: "{VERSION}",
-            id     : multiMapsSetupList[0].id
+            id     : multiMapsSetupList[0].id, border: true,
         },
 
         //initialize
@@ -102,6 +102,8 @@ NAME  col#1  col#2  col#3  col#4  col#5
             var $container = container instanceof $ ? container : $(container);
 
             $container.addClass('multi-map-outer-container');
+            if (!this.options.border)
+                $container.addClass('no-border');              
 
             var $col = $('<div class="multi-map-sub-container multi-map-1"></div>');
             $col

@@ -184,7 +184,7 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 //Adjusting border to collaps borders
 $border: 1px solid black;
 
-.multi-map-outer-container {
+.multi-map-outer-container:not(.no-border) {
     border: $border;
 
     >.multi-map-sub-container, >.multi-map-container:not(.multi-map-2) {    

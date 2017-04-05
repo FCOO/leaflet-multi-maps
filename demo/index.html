@@ -9,7 +9,6 @@
 	<meta name='copyright' content='FCOO'>
 	<meta name='owner' content='FCOO'>
 
-  <link  href="modernizr-mediaquery.css" rel="stylesheet">	
   <link  href="bower_components.css" rel="stylesheet">	
   <link  href="../src/leaflet-multi-maps.css" rel="stylesheet">	
   <style>
@@ -41,13 +40,11 @@
 <div id="my-multi-map-container" style="position: absolute; top:0; left:0; z-index:1">
 </div>    
 
-<div style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box">
-    <div id="my-mini-multi-map-container" style="width:80px; height:60px"></div>    
-</div>    
+<div id="my-mini-multi-map-container" style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box"></div>    
+<div id="my-mini-multi-map-container2" style="position: absolute; right:10px; bottom:10px; z-index:1; box-sizing: border-box; max-height:20px"></div>    
 
 
 	
-	<script src="modernizr.js"></script>
 	<script src="bower_components.js"></script>
 	<script src="../src/leaflet-multi-maps.js"></script>
 	<script>
@@ -55,40 +52,21 @@
 
 
     $(function() {
-        var mmq = new window.ModernizrMediaquery();
-        mmq.on( 'landscape portrait', function( m ){ 
-            console.log('Is now in '+m+'-mode') ;
-        });
-
-        mmq.on( 'landscape portrait', function( m ){ 
-            var w = screen.availWidth, //$(document.body).innerWidth(),
-                h = screen.availHeight, //$(document.body).innerHeight(),
-                r = h/w,
-                p = r > 1,
-                min = 60,
-                max = 80,
-                minD = min,
-                maxD = min*(p ? r : 1/r ); //Math.min( max, minD*Math.max( w, h )/Math.min( w, h ) );
-            $('#my-mini-multi-map-container')
-                .height( p ? maxD : minD )
-                .width( p ? minD : maxD );
-console.log('wxh=',w+'x'+h, 'minDxmaxDh=',minD+'x'+maxD, w/h, p? minD/maxD : maxD/minD);
-        });
-        
-        mmq._onMediaQuery();
-
-
-
         
         var myMultiMaps = L.multiMaps( '#my-multi-map-container' /*, options */ ),
             myMiniMultiMaps = L.multiMaps( 
                 $('#my-mini-multi-map-container'), {
-                    update: function( index, map, $container ){
-                                $container.html( index );
-                            }
+                    update: function( index, map, $container ){ $container.html( index );}
+                }),
+            myMiniMultiMaps2 = L.multiMaps( 
+                $('#my-mini-multi-map-container2'), {
+                    update: function( index, map, $container ){ $container.css( 'background-color', index % 2 ? 'green' : 'white' ); }
                 }),
             map;
         
+        $('#my-mini-multi-map-container').screenRatio( 60 );
+        $('#my-mini-multi-map-container2').screenRatio( 20 );
+
         map = myMultiMaps.addMap();
         map.setView([56.2, 11.5], 6);
 		L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
@@ -125,6 +103,7 @@ console.log('wxh=',w+'x'+h, 'minDxmaxDh=',minD+'x'+maxD, w/h, p? minD/maxD : max
             myMultiMaps.set( myMultiMaps.setupList[testIndex].id );
 
             myMiniMultiMaps.set( myMultiMaps.setupList[testIndex].id );
+            myMiniMultiMaps2.set( myMultiMaps.setupList[testIndex].id );
 
             document.title = myMultiMaps.setupList[testIndex].id;
         }

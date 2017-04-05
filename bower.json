@@ -1,40 +1,41 @@
 {
-  "name": "leaflet-multi-maps",
-  "version": "1.1.0",
-  "homepage": "https://github.com/FCOO/leaflet-multi-maps",
-  "authors": [
-    "Niels Holt"
-  ],
-  "description": "",
-  "main": [
-    "dist/leaflet-multi-maps.js",
-    "dist/leaflet-multi-maps.css"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/FCOO/leaflet-multi-maps.git"
-  },
-  "dependencies": {
-    "jquery": "latest",
-    "leaflet": "latest",
-    "modernizr-mediaquery": "fcoo/modernizr-mediaquery#^1.2.10",
-    "modernizr-device": "fcoo/modernizr-device#^2.2.4"
-  },
-  "devDependencies": {
-    "bourbon": "latest",
-    "modernizr-mixin": "latest",
-    "mathsass": "latest",
-    "modernizr-scss": "fcoo/modernizr-scss#^2.1.2"
-  },
-  "license": "MIT",
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "test",
-    "tests"
-  ],
-  "moduleType": [
-    "es6"
-  ]
+    "name": "leaflet-multi-maps",
+    "version": "1.1.0",
+    "homepage": "https://github.com/FCOO/leaflet-multi-maps",
+    "authors": [
+        "Niels Holt"
+    ],
+    "description": "",
+    "main": [
+        "dist/leaflet-multi-maps.js",
+        "dist/leaflet-multi-maps.css"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/FCOO/leaflet-multi-maps.git"
+    },
+    "dependencies": {
+        "jquery": "latest",
+        "leaflet": "latest",
+        "modernizr-mediaquery": "fcoo/modernizr-mediaquery#^1.2.10",
+        "modernizr-device": "fcoo/modernizr-device#^2.2.4",
+        "jquery-screen-ratio": "fcoo/jquery-screen-ratio#^1.0.0"
+    },
+    "devDependencies": {
+        "bourbon": "latest",
+        "modernizr-mixin": "latest",
+        "mathsass": "latest",
+        "modernizr-scss": "fcoo/modernizr-scss#^2.1.2"
+    },
+    "license": "MIT",
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests"
+    ],
+    "moduleType": [
+        "es6"
+    ]
 }
