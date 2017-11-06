@@ -41,7 +41,7 @@
 </div>    
 
 <div id="my-mini-multi-map-container" style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box"></div>    
-<div id="my-mini-multi-map-container2" style="position: absolute; right:10px; bottom:10px; z-index:1; box-sizing: border-box; max-height:20px"></div>    
+<div id="my-mini-multi-map-container2" style="position: absolute; right:10px; bottom:10px; z-index:1; box-sizing: border-box"></div>    
 
 
 	
@@ -52,20 +52,28 @@
 
 
     $(function() {
-        
-        var myMultiMaps = L.multiMaps( '#my-multi-map-container' /*, options */ ),
+        var testState = 0,
+            myMultiMaps = L.multiMaps( '#my-multi-map-container' /*, options */ ),
             myMiniMultiMaps = L.multiMaps( 
                 $('#my-mini-multi-map-container'), {
                     update: function( index, map, $container ){ $container.html( index );}
                 }),
             myMiniMultiMaps2 = L.multiMaps( 
                 $('#my-mini-multi-map-container2'), {
-                    update: function( index, map, $container ){ $container.css( 'background-color', index % 2 ? 'green' : 'white' ); }
+                    update: function( index, map, $container ){ 
+                        $container
+                            .css( 'background-color', index % 2 == testState ? 'green' : 'white' ); 
+                    }
                 }),
             map;
-        
+
+        $('#my-mini-multi-map-container2').on('click', function(){
+            testState = 1 - testState;
+            myMiniMultiMaps2.updateSubMaps();
+        });
+    
         $('#my-mini-multi-map-container').screenRatio( 60 );
-        $('#my-mini-multi-map-container2').screenRatio( 20 );
+        $('#my-mini-multi-map-container2').windowRatio( 20, 30 );
 
         map = myMultiMaps.addMap();
         map.setView([56.2, 11.5], 6);

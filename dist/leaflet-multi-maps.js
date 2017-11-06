@@ -1,5 +1,5 @@
 /****************************************************************************
-    leaflet-multi-maps.js, 
+    leaflet-multi-maps.js,
 
     (c) 2016, FCOO
 
@@ -12,13 +12,13 @@
 /*
 There are 11 differents setups
 NAME  col#1  col#2  col#3  col#4  col#5
------ ------ ------ ------ ------ ------ 
-1            show   
+----- ------ ------ ------ ------ ------
+1            show
 1-1          show   show
 1-1-1        show   show   show
 2-1   show 2 show
 3-1   show 3 show
-2-2   show 2                      show 
+2-2   show 2                      show
 2-1-1 show 2 show   show
 2-1-2 show 2 show                 show
 
@@ -49,7 +49,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
 
     //Default update-function
-    function multiMaps_update( index, map, $container ){ 
+    function multiMaps_update( index, map, $container ){
         if (map){
             $container.append( $(map.getContainer())  );
             map._onResize();
@@ -61,11 +61,12 @@ NAME  col#1  col#2  col#3  col#4  col#5
         setups   : multiMapsSetups,
         setupList: multiMapsSetupList,
         setup    : null,
-    
+
         //Default options
         options: {
-            VERSION: "1.1.0",
-            id     : multiMapsSetupList[0].id
+            VERSION: "1.1.1",
+            id     : multiMapsSetupList[0].id,
+            border : true,
         },
 
         //initialize
@@ -78,7 +79,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
             this.update     = options && options.update ? options.update : multiMaps_update;
 
             this.build( this.$container );
-            this.set( this.options.id );            
+            this.set( this.options.id );
         },
 
         //build - build the html inside container
@@ -90,18 +91,20 @@ NAME  col#1  col#2  col#3  col#4  col#5
                 <div class="multi-map-container multi-map-1-1"></div>
                 <div class="multi-map-container multi-map-1-2"></div>
                 <div class="multi-map-container multi-map-1-3"></div>
-            </div>    
+            </div>
             <div class="multi-map-container multi-map-2"></div>
             <div class="multi-map-container multi-map-3"></div>
             <div class="multi-map-container multi-map-4"></div>
             <div class="multi-map-sub-container multi-map-5">
                 <div class="multi-map-container multi-map-5-1"></div>
                 <div class="multi-map-container multi-map-5-2"></div>
-            </div>    
+            </div>
             */
             var $container = container instanceof $ ? container : $(container);
 
             $container.addClass('multi-map-outer-container');
+            if (!this.options.border)
+                $container.addClass('no-border');
 
             var $col = $('<div class="multi-map-sub-container multi-map-1"></div>');
             $col
@@ -143,10 +146,6 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //set
         set: function ( id ) {
-            var i, 
-                map, 
-                $map_container;
-
             if (!this.setups[id])
                 return;
 
@@ -154,28 +153,38 @@ NAME  col#1  col#2  col#3  col#4  col#5
             //Reset from previous setup
             if (this.setup)
                 $html.removeClass( this.setup.className );
-            
+
             this.options.id = id;
             this.setup = this.setups[id];
 
             $html.addClass( this.setup.className );
 
+            this.updateSubMaps();
+
+        },
+
+        //updateSubMaps
+        updateSubMaps: function () {
+            var i,
+                map,
+                $map_container;
+
             //Remove the maps (if any) from its current container
             for (i=0; i<this.mapList.length; i++ ){
                 map = this.mapList[i];
                 $map_container = $(map.getContainer());
-    
+
                 if ($map_container.parent().length )
                     $map_container.detach();
             }
 
             //Call this.update for all visible sub-maps
             for (i=0; i<this.setup.mapClassNamePostfix.length; i++ )
-                this.update.call( this, 
-                    /*index     :*/ i, 
+                this.update.call( this,
+                    /*index     :*/ i,
                     /*map       :*/ this.mapList && (i < this.mapList.length) ? this.mapList[i] : null,
-                    /*$container:*/ this.$container.find('.multi-map-'+this.setup.mapClassNamePostfix[i] ) 
-                ); 
+                    /*$container:*/ this.$container.find('.multi-map-'+this.setup.mapClassNamePostfix[i] )
+                );
         }
 
     });

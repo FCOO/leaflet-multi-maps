@@ -11,8 +11,11 @@ There are 11 different modes with 1-5 maps displayed in equal width-height-ratio
 `bower install https://github.com/FCOO/leaflet-multi-maps.git --save`
 
 Using [modernizr-mediaquery](https://github.com/FCOO/modernizr-mediaquery) that must be included manually
+
 ## Demo
 http://FCOO.github.io/leaflet-multi-maps/demo/ 
+
+The demo also shows how to create miniature versions of the selected multi-map setup using [jquery-screen-ratio](https://github.com/FCOO/jquery-screen-ratio)
 
 ## Usage
 
