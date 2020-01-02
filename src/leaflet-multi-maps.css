@@ -1,5 +1,5 @@
 /***********************************************
-    leaflet-multi-maps.scss, 
+    leaflet-multi-maps.scss,
 
     (c) 2016, FCOO
 
@@ -8,6 +8,8 @@
 
 
 ************************************************/
+/* stylelint-disable order/properties-alphabetical-order */
+/* stylelint-enable */
 /*
 css for different setups of maps.
 In landscape mode it is by columns. In portrait mode it is by rows.
@@ -18,13 +20,13 @@ The order of the columns is changed when class 'multi-map-reverse' is added
 
 There are 11 different setups
 NAME  col#1  col#2  col#3  col#4  col#5
------ ------ ------ ------ ------ ------ 
-1            show   
+----- ------ ------ ------ ------ ------
+1            show
 1-1          show   show
 1-1-1        show   show   show
 2-1   show 2 show
 3-1   show 3 show
-2-2   show 2                      show 
+2-2   show 2                      show
 2-1-1 show 2 show   show
 2-1-2 show 2 show                 show
 

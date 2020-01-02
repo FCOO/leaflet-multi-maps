@@ -1,5 +1,5 @@
 /*!
- * jQuery JavaScript Library v3.2.1
+ * jQuery JavaScript Library v3.4.1
  * https://jquery.com/
  *
  * Includes Sizzle.js
@@ -9,7 +9,7 @@
  * Released under the MIT license
  * https://jquery.org/license
  *
- * Date: 2017-03-20T18:59Z
+ * Date: 2019-05-01T21:04Z
  */
 ( function( global, factory ) {
 
@@ -71,16 +71,70 @@ var ObjectFunctionString = fnToString.call( Object );
 
 var support = {};
 
+var isFunction = function isFunction( obj ) {
+
+      // Support: Chrome <=57, Firefox <=52
+      // In some browsers, typeof returns "function" for HTML <object> elements
+      // (i.e., `typeof document.createElement( "object" ) === "function"`).
+      // We don't want to classify *any* DOM node as a function.
+      return typeof obj === "function" && typeof obj.nodeType !== "number";
+  };
 
 
-	function DOMEval( code, doc ) {
+var isWindow = function isWindow( obj ) {
+		return obj != null && obj === obj.window;
+	};
+
+
+
+
+	var preservedScriptAttributes = {
+		type: true,
+		src: true,
+		nonce: true,
+		noModule: true
+	};
+
+	function DOMEval( code, node, doc ) {
 		doc = doc || document;
 
-		var script = doc.createElement( "script" );
+		var i, val,
+			script = doc.createElement( "script" );
 
 		script.text = code;
+		if ( node ) {
+			for ( i in preservedScriptAttributes ) {
+
+				// Support: Firefox 64+, Edge 18+
+				// Some browsers don't support the "nonce" property on scripts.
+				// On the other hand, just using `getAttribute` is not enough as
+				// the `nonce` attribute is reset to an empty string whenever it
+				// becomes browsing-context connected.
+				// See https://github.com/whatwg/html/issues/2369
+				// See https://html.spec.whatwg.org/#nonce-attributes
+				// The `node.getAttribute` check was added for the sake of
+				// `jQuery.globalEval` so that it can fake a nonce-containing node
+				// via an object.
+				val = node[ i ] || node.getAttribute && node.getAttribute( i );
+				if ( val ) {
+					script.setAttribute( i, val );
+				}
+			}
+		}
 		doc.head.appendChild( script ).parentNode.removeChild( script );
 	}
+
+
+function toType( obj ) {
+	if ( obj == null ) {
+		return obj + "";
+	}
+
+	// Support: Android <=2.3 only (functionish RegExp)
+	return typeof obj === "object" || typeof obj === "function" ?
+		class2type[ toString.call( obj ) ] || "object" :
+		typeof obj;
+}
 /* global Symbol */
 // Defining this global in .eslintrc.json would create a danger of using the global
 // unguarded in another place, it seems safer to define global only for this module
@@ -88,7 +142,7 @@ var support = {};
 
 
 var
-	version = "3.2.1",
+	version = "3.4.1",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -100,16 +154,7 @@ var
 
 	// Support: Android <=4.0 only
 	// Make sure we trim BOM and NBSP
-	rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g,
-
-	// Matches dashed string for camelizing
-	rmsPrefix = /^-ms-/,
-	rdashAlpha = /-([a-z])/g,
-
-	// Used by jQuery.camelCase as callback to replace()
-	fcamelCase = function( all, letter ) {
-		return letter.toUpperCase();
-	};
+	rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g;
 
 jQuery.fn = jQuery.prototype = {
 
@@ -209,7 +254,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 	}
 
 	// Handle case when target is a string or something (possible in deep copy)
-	if ( typeof target !== "object" && !jQuery.isFunction( target ) ) {
+	if ( typeof target !== "object" && !isFunction( target ) ) {
 		target = {};
 	}
 
@@ -226,25 +271,28 @@ jQuery.extend = jQuery.fn.extend = function() {
 
 			// Extend the base object
 			for ( name in options ) {
-				src = target[ name ];
 				copy = options[ name ];
 
+				// Prevent Object.prototype pollution
 				// Prevent never-ending loop
-				if ( target === copy ) {
+				if ( name === "__proto__" || target === copy ) {
 					continue;
 				}
 
 				// Recurse if we're merging plain objects or arrays
 				if ( deep && copy && ( jQuery.isPlainObject( copy ) ||
 					( copyIsArray = Array.isArray( copy ) ) ) ) {
+					src = target[ name ];
 
-					if ( copyIsArray ) {
-						copyIsArray = false;
-						clone = src && Array.isArray( src ) ? src : [];
-
+					// Ensure proper type for the source value
+					if ( copyIsArray && !Array.isArray( src ) ) {
+						clone = [];
+					} else if ( !copyIsArray && !jQuery.isPlainObject( src ) ) {
+						clone = {};
 					} else {
-						clone = src && jQuery.isPlainObject( src ) ? src : {};
+						clone = src;
 					}
+					copyIsArray = false;
 
 					// Never move original objects, clone them
 					target[ name ] = jQuery.extend( deep, clone, copy );
@@ -275,28 +323,6 @@ jQuery.extend( {
 
 	noop: function() {},
 
-	isFunction: function( obj ) {
-		return jQuery.type( obj ) === "function";
-	},
-
-	isWindow: function( obj ) {
-		return obj != null && obj === obj.window;
-	},
-
-	isNumeric: function( obj ) {
-
-		// As of jQuery 3.0, isNumeric is limited to
-		// strings and numbers (primitives or objects)
-		// that can be coerced to finite numbers (gh-2662)
-		var type = jQuery.type( obj );
-		return ( type === "number" || type === "string" ) &&
-
-			// parseFloat NaNs numeric-cast false positives ("")
-			// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
-			// subtraction forces infinities to NaN
-			!isNaN( obj - parseFloat( obj ) );
-	},
-
 	isPlainObject: function( obj ) {
 		var proto, Ctor;
 
@@ -319,9 +345,6 @@ jQuery.extend( {
 	},
 
 	isEmptyObject: function( obj ) {
-
-		/* eslint-disable no-unused-vars */
-		// See https://github.com/eslint/eslint/issues/6125
 		var name;
 
 		for ( name in obj ) {
@@ -330,27 +353,9 @@ jQuery.extend( {
 		return true;
 	},
 
-	type: function( obj ) {
-		if ( obj == null ) {
-			return obj + "";
-		}
-
-		// Support: Android <=2.3 only (functionish RegExp)
-		return typeof obj === "object" || typeof obj === "function" ?
-			class2type[ toString.call( obj ) ] || "object" :
-			typeof obj;
-	},
-
 	// Evaluates a script in a global context
-	globalEval: function( code ) {
-		DOMEval( code );
-	},
-
-	// Convert dashed to camelCase; used by the css and data modules
-	// Support: IE <=9 - 11, Edge 12 - 13
-	// Microsoft forgot to hump their vendor prefix (#9572)
-	camelCase: function( string ) {
-		return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
+	globalEval: function( code, options ) {
+		DOMEval( code, { nonce: options && options.nonce } );
 	},
 
 	each: function( obj, callback ) {
@@ -473,37 +478,6 @@ jQuery.extend( {
 	// A global GUID counter for objects
 	guid: 1,
 
-	// Bind a function to a context, optionally partially applying any
-	// arguments.
-	proxy: function( fn, context ) {
-		var tmp, args, proxy;
-
-		if ( typeof context === "string" ) {
-			tmp = fn[ context ];
-			context = fn;
-			fn = tmp;
-		}
-
-		// Quick check to determine if target is callable, in the spec
-		// this throws a TypeError, but we will just return undefined.
-		if ( !jQuery.isFunction( fn ) ) {
-			return undefined;
-		}
-
-		// Simulated bind
-		args = slice.call( arguments, 2 );
-		proxy = function() {
-			return fn.apply( context || this, args.concat( slice.call( arguments ) ) );
-		};
-
-		// Set the guid of unique handler to the same of original handler, so it can be removed
-		proxy.guid = fn.guid = fn.guid || jQuery.guid++;
-
-		return proxy;
-	},
-
-	now: Date.now,
-
 	// jQuery.support is not used in Core but other projects attach their
 	// properties to it so it needs to exist.
 	support: support
@@ -526,9 +500,9 @@ function isArrayLike( obj ) {
 	// hasOwn isn't used here due to false negatives
 	// regarding Nodelist length in IE
 	var length = !!obj && "length" in obj && obj.length,
-		type = jQuery.type( obj );
+		type = toType( obj );
 
-	if ( type === "function" || jQuery.isWindow( obj ) ) {
+	if ( isFunction( obj ) || isWindow( obj ) ) {
 		return false;
 	}
 
@@ -537,14 +511,14 @@ function isArrayLike( obj ) {
 }
 var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v2.3.3
+ * Sizzle CSS Selector Engine v2.3.4
  * https://sizzlejs.com/
  *
- * Copyright jQuery Foundation and other contributors
+ * Copyright JS Foundation and other contributors
  * Released under the MIT license
- * http://jquery.org/license
+ * https://js.foundation/
  *
- * Date: 2016-08-08
+ * Date: 2019-04-08
  */
 (function( window ) {
 
@@ -578,6 +552,7 @@ var i,
 	classCache = createCache(),
 	tokenCache = createCache(),
 	compilerCache = createCache(),
+	nonnativeSelectorCache = createCache(),
 	sortOrder = function( a, b ) {
 		if ( a === b ) {
 			hasDuplicate = true;
@@ -639,8 +614,7 @@ var i,
 
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
 	rcombinators = new RegExp( "^" + whitespace + "*([>+~]|" + whitespace + ")" + whitespace + "*" ),
-
-	rattributeQuotes = new RegExp( "=" + whitespace + "*([^\\]'\"]*?)" + whitespace + "*\\]", "g" ),
+	rdescend = new RegExp( whitespace + "|>" ),
 
 	rpseudo = new RegExp( pseudos ),
 	ridentifier = new RegExp( "^" + identifier + "$" ),
@@ -661,6 +635,7 @@ var i,
 			whitespace + "*((?:-\\d)?\\d*)" + whitespace + "*\\)|)(?=[^-]|$)", "i" )
 	},
 
+	rhtml = /HTML$/i,
 	rinputs = /^(?:input|select|textarea|button)$/i,
 	rheader = /^h\d$/i,
 
@@ -715,9 +690,9 @@ var i,
 		setDocument();
 	},
 
-	disabledAncestor = addCombinator(
+	inDisabledFieldset = addCombinator(
 		function( elem ) {
-			return elem.disabled === true && ("form" in elem || "label" in elem);
+			return elem.disabled === true && elem.nodeName.toLowerCase() === "fieldset";
 		},
 		{ dir: "parentNode", next: "legend" }
 	);
@@ -830,18 +805,22 @@ function Sizzle( selector, context, results, seed ) {
 
 			// Take advantage of querySelectorAll
 			if ( support.qsa &&
-				!compilerCache[ selector + " " ] &&
-				(!rbuggyQSA || !rbuggyQSA.test( selector )) ) {
+				!nonnativeSelectorCache[ selector + " " ] &&
+				(!rbuggyQSA || !rbuggyQSA.test( selector )) &&
 
-				if ( nodeType !== 1 ) {
-					newContext = context;
-					newSelector = selector;
-
-				// qSA looks outside Element context, which is not what we want
-				// Thanks to Andrew Dupont for this workaround technique
-				// Support: IE <=8
+				// Support: IE 8 only
 				// Exclude object elements
-				} else if ( context.nodeName.toLowerCase() !== "object" ) {
+				(nodeType !== 1 || context.nodeName.toLowerCase() !== "object") ) {
+
+				newSelector = selector;
+				newContext = context;
+
+				// qSA considers elements outside a scoping root when evaluating child or
+				// descendant combinators, which is not what we want.
+				// In such cases, we work around the behavior by prefixing every selector in the
+				// list with an ID selector referencing the scope context.
+				// Thanks to Andrew Dupont for this technique.
+				if ( nodeType === 1 && rdescend.test( selector ) ) {
 
 					// Capture the context ID, setting it first if necessary
 					if ( (nid = context.getAttribute( "id" )) ) {
@@ -863,17 +842,16 @@ function Sizzle( selector, context, results, seed ) {
 						context;
 				}
 
-				if ( newSelector ) {
-					try {
-						push.apply( results,
-							newContext.querySelectorAll( newSelector )
-						);
-						return results;
-					} catch ( qsaError ) {
-					} finally {
-						if ( nid === expando ) {
-							context.removeAttribute( "id" );
-						}
+				try {
+					push.apply( results,
+						newContext.querySelectorAll( newSelector )
+					);
+					return results;
+				} catch ( qsaError ) {
+					nonnativeSelectorCache( selector, true );
+				} finally {
+					if ( nid === expando ) {
+						context.removeAttribute( "id" );
 					}
 				}
 			}
@@ -1037,7 +1015,7 @@ function createDisabledPseudo( disabled ) {
 					// Where there is no isDisabled, check manually
 					/* jshint -W018 */
 					elem.isDisabled !== !disabled &&
-						disabledAncestor( elem ) === disabled;
+						inDisabledFieldset( elem ) === disabled;
 			}
 
 			return elem.disabled === disabled;
@@ -1094,10 +1072,13 @@ support = Sizzle.support = {};
  * @returns {Boolean} True iff elem is a non-HTML XML node
  */
 isXML = Sizzle.isXML = function( elem ) {
-	// documentElement is verified for cases where it doesn't yet exist
-	// (such as loading iframes in IE - #4833)
-	var documentElement = elem && (elem.ownerDocument || elem).documentElement;
-	return documentElement ? documentElement.nodeName !== "HTML" : false;
+	var namespace = elem.namespaceURI,
+		docElem = (elem.ownerDocument || elem).documentElement;
+
+	// Support: IE <=8
+	// Assume HTML when documentElement doesn't yet exist, such as inside loading iframes
+	// https://bugs.jquery.com/ticket/4833
+	return !rhtml.test( namespace || docElem && docElem.nodeName || "HTML" );
 };
 
 /**
@@ -1519,11 +1500,8 @@ Sizzle.matchesSelector = function( elem, expr ) {
 		setDocument( elem );
 	}
 
-	// Make sure that attribute selectors are quoted
-	expr = expr.replace( rattributeQuotes, "='$1']" );
-
 	if ( support.matchesSelector && documentIsHTML &&
-		!compilerCache[ expr + " " ] &&
+		!nonnativeSelectorCache[ expr + " " ] &&
 		( !rbuggyMatches || !rbuggyMatches.test( expr ) ) &&
 		( !rbuggyQSA     || !rbuggyQSA.test( expr ) ) ) {
 
@@ -1537,7 +1515,9 @@ Sizzle.matchesSelector = function( elem, expr ) {
 					elem.document && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
-		} catch (e) {}
+		} catch (e) {
+			nonnativeSelectorCache( expr, true );
+		}
 	}
 
 	return Sizzle( expr, document, null, [ elem ] ).length > 0;
@@ -1996,7 +1976,7 @@ Expr = Sizzle.selectors = {
 		"contains": markFunction(function( text ) {
 			text = text.replace( runescape, funescape );
 			return function( elem ) {
-				return ( elem.textContent || elem.innerText || getText( elem ) ).indexOf( text ) > -1;
+				return ( elem.textContent || getText( elem ) ).indexOf( text ) > -1;
 			};
 		}),
 
@@ -2135,7 +2115,11 @@ Expr = Sizzle.selectors = {
 		}),
 
 		"lt": createPositionalPseudo(function( matchIndexes, length, argument ) {
-			var i = argument < 0 ? argument + length : argument;
+			var i = argument < 0 ?
+				argument + length :
+				argument > length ?
+					length :
+					argument;
 			for ( ; --i >= 0; ) {
 				matchIndexes.push( i );
 			}
@@ -2848,11 +2832,9 @@ var rsingleTag = ( /^<([a-z][^\/\0>:\x20\t\r\n\f]*)[\x20\t\r\n\f]*\/?>(?:<\/\1>|
 
 
 
-var risSimple = /^.[^:#\[\.,]*$/;
-
 // Implement the identical functionality for filter and not
 function winnow( elements, qualifier, not ) {
-	if ( jQuery.isFunction( qualifier ) ) {
+	if ( isFunction( qualifier ) ) {
 		return jQuery.grep( elements, function( elem, i ) {
 			return !!qualifier.call( elem, i, elem ) !== not;
 		} );
@@ -2872,16 +2854,8 @@ function winnow( elements, qualifier, not ) {
 		} );
 	}
 
-	// Simple selector that can be filtered directly, removing non-Elements
-	if ( risSimple.test( qualifier ) ) {
-		return jQuery.filter( qualifier, elements, not );
-	}
-
-	// Complex selector, compare the two sets, removing non-Elements
-	qualifier = jQuery.filter( qualifier, elements );
-	return jQuery.grep( elements, function( elem ) {
-		return ( indexOf.call( qualifier, elem ) > -1 ) !== not && elem.nodeType === 1;
-	} );
+	// Filtered directly for both simple and complex selectors
+	return jQuery.filter( qualifier, elements, not );
 }
 
 jQuery.filter = function( expr, elems, not ) {
@@ -3002,7 +2976,7 @@ var rootjQuery,
 						for ( match in context ) {
 
 							// Properties of context are called as methods if possible
-							if ( jQuery.isFunction( this[ match ] ) ) {
+							if ( isFunction( this[ match ] ) ) {
 								this[ match ]( context[ match ] );
 
 							// ...and otherwise set as attributes
@@ -3045,7 +3019,7 @@ var rootjQuery,
 
 		// HANDLE: $(function)
 		// Shortcut for document ready
-		} else if ( jQuery.isFunction( selector ) ) {
+		} else if ( isFunction( selector ) ) {
 			return root.ready !== undefined ?
 				root.ready( selector ) :
 
@@ -3195,18 +3169,18 @@ jQuery.each( {
 		return siblings( elem.firstChild );
 	},
 	contents: function( elem ) {
-        if ( nodeName( elem, "iframe" ) ) {
-            return elem.contentDocument;
-        }
+		if ( typeof elem.contentDocument !== "undefined" ) {
+			return elem.contentDocument;
+		}
 
-        // Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
-        // Treat the template element as a regular one in browsers that
-        // don't support it.
-        if ( nodeName( elem, "template" ) ) {
-            elem = elem.content || elem;
-        }
+		// Support: IE 9 - 11 only, iOS 7 only, Android Browser <=4.3 only
+		// Treat the template element as a regular one in browsers that
+		// don't support it.
+		if ( nodeName( elem, "template" ) ) {
+			elem = elem.content || elem;
+		}
 
-        return jQuery.merge( [], elem.childNodes );
+		return jQuery.merge( [], elem.childNodes );
 	}
 }, function( name, fn ) {
 	jQuery.fn[ name ] = function( until, selector ) {
@@ -3360,11 +3334,11 @@ jQuery.Callbacks = function( options ) {
 
 					( function add( args ) {
 						jQuery.each( args, function( _, arg ) {
-							if ( jQuery.isFunction( arg ) ) {
+							if ( isFunction( arg ) ) {
 								if ( !options.unique || !self.has( arg ) ) {
 									list.push( arg );
 								}
-							} else if ( arg && arg.length && jQuery.type( arg ) !== "string" ) {
+							} else if ( arg && arg.length && toType( arg ) !== "string" ) {
 
 								// Inspect recursively
 								add( arg );
@@ -3479,11 +3453,11 @@ function adoptValue( value, resolve, reject, noValue ) {
 	try {
 
 		// Check for promise aspect first to privilege synchronous behavior
-		if ( value && jQuery.isFunction( ( method = value.promise ) ) ) {
+		if ( value && isFunction( ( method = value.promise ) ) ) {
 			method.call( value ).done( resolve ).fail( reject );
 
 		// Other thenables
-		} else if ( value && jQuery.isFunction( ( method = value.then ) ) ) {
+		} else if ( value && isFunction( ( method = value.then ) ) ) {
 			method.call( value, resolve, reject );
 
 		// Other non-thenables
@@ -3541,14 +3515,14 @@ jQuery.extend( {
 						jQuery.each( tuples, function( i, tuple ) {
 
 							// Map tuples (progress, done, fail) to arguments (done, fail, progress)
-							var fn = jQuery.isFunction( fns[ tuple[ 4 ] ] ) && fns[ tuple[ 4 ] ];
+							var fn = isFunction( fns[ tuple[ 4 ] ] ) && fns[ tuple[ 4 ] ];
 
 							// deferred.progress(function() { bind to newDefer or newDefer.notify })
 							// deferred.done(function() { bind to newDefer or newDefer.resolve })
 							// deferred.fail(function() { bind to newDefer or newDefer.reject })
 							deferred[ tuple[ 1 ] ]( function() {
 								var returned = fn && fn.apply( this, arguments );
-								if ( returned && jQuery.isFunction( returned.promise ) ) {
+								if ( returned && isFunction( returned.promise ) ) {
 									returned.promise()
 										.progress( newDefer.notify )
 										.done( newDefer.resolve )
@@ -3602,7 +3576,7 @@ jQuery.extend( {
 										returned.then;
 
 									// Handle a returned thenable
-									if ( jQuery.isFunction( then ) ) {
+									if ( isFunction( then ) ) {
 
 										// Special processors (notify) just wait for resolution
 										if ( special ) {
@@ -3698,7 +3672,7 @@ jQuery.extend( {
 							resolve(
 								0,
 								newDefer,
-								jQuery.isFunction( onProgress ) ?
+								isFunction( onProgress ) ?
 									onProgress :
 									Identity,
 								newDefer.notifyWith
@@ -3710,7 +3684,7 @@ jQuery.extend( {
 							resolve(
 								0,
 								newDefer,
-								jQuery.isFunction( onFulfilled ) ?
+								isFunction( onFulfilled ) ?
 									onFulfilled :
 									Identity
 							)
@@ -3721,7 +3695,7 @@ jQuery.extend( {
 							resolve(
 								0,
 								newDefer,
-								jQuery.isFunction( onRejected ) ?
+								isFunction( onRejected ) ?
 									onRejected :
 									Thrower
 							)
@@ -3761,8 +3735,15 @@ jQuery.extend( {
 					// fulfilled_callbacks.disable
 					tuples[ 3 - i ][ 2 ].disable,
 
+					// rejected_handlers.disable
+					// fulfilled_handlers.disable
+					tuples[ 3 - i ][ 3 ].disable,
+
 					// progress_callbacks.lock
-					tuples[ 0 ][ 2 ].lock
+					tuples[ 0 ][ 2 ].lock,
+
+					// progress_handlers.lock
+					tuples[ 0 ][ 3 ].lock
 				);
 			}
 
@@ -3832,7 +3813,7 @@ jQuery.extend( {
 
 			// Use .then() to unwrap secondary thenables (cf. gh-3000)
 			if ( master.state() === "pending" ||
-				jQuery.isFunction( resolveValues[ i ] && resolveValues[ i ].then ) ) {
+				isFunction( resolveValues[ i ] && resolveValues[ i ].then ) ) {
 
 				return master.then();
 			}
@@ -3960,7 +3941,7 @@ var access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
 		bulk = key == null;
 
 	// Sets many values
-	if ( jQuery.type( key ) === "object" ) {
+	if ( toType( key ) === "object" ) {
 		chainable = true;
 		for ( i in key ) {
 			access( elems, fn, i, key[ i ], true, emptyGet, raw );
@@ -3970,7 +3951,7 @@ var access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
 	} else if ( value !== undefined ) {
 		chainable = true;
 
-		if ( !jQuery.isFunction( value ) ) {
+		if ( !isFunction( value ) ) {
 			raw = true;
 		}
 
@@ -4012,6 +3993,23 @@ var access = function( elems, fn, key, value, chainable, emptyGet, raw ) {
 
 	return len ? fn( elems[ 0 ], key ) : emptyGet;
 };
+
+
+// Matches dashed string for camelizing
+var rmsPrefix = /^-ms-/,
+	rdashAlpha = /-([a-z])/g;
+
+// Used by camelCase as callback to replace()
+function fcamelCase( all, letter ) {
+	return letter.toUpperCase();
+}
+
+// Convert dashed to camelCase; used by the css and data modules
+// Support: IE <=9 - 11, Edge 12 - 15
+// Microsoft forgot to hump their vendor prefix (#9572)
+function camelCase( string ) {
+	return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
+}
 var acceptData = function( owner ) {
 
 	// Accepts only:
@@ -4074,14 +4072,14 @@ Data.prototype = {
 		// Handle: [ owner, key, value ] args
 		// Always use camelCase key (gh-2257)
 		if ( typeof data === "string" ) {
-			cache[ jQuery.camelCase( data ) ] = value;
+			cache[ camelCase( data ) ] = value;
 
 		// Handle: [ owner, { properties } ] args
 		} else {
 
 			// Copy the properties one-by-one to the cache object
 			for ( prop in data ) {
-				cache[ jQuery.camelCase( prop ) ] = data[ prop ];
+				cache[ camelCase( prop ) ] = data[ prop ];
 			}
 		}
 		return cache;
@@ -4091,7 +4089,7 @@ Data.prototype = {
 			this.cache( owner ) :
 
 			// Always use camelCase key (gh-2257)
-			owner[ this.expando ] && owner[ this.expando ][ jQuery.camelCase( key ) ];
+			owner[ this.expando ] && owner[ this.expando ][ camelCase( key ) ];
 	},
 	access: function( owner, key, value ) {
 
@@ -4139,9 +4137,9 @@ Data.prototype = {
 
 				// If key is an array of keys...
 				// We always set camelCase keys, so remove that.
-				key = key.map( jQuery.camelCase );
+				key = key.map( camelCase );
 			} else {
-				key = jQuery.camelCase( key );
+				key = camelCase( key );
 
 				// If a key with the spaces exists, use it.
 				// Otherwise, create an array by matching non-whitespace
@@ -4287,7 +4285,7 @@ jQuery.fn.extend( {
 						if ( attrs[ i ] ) {
 							name = attrs[ i ].name;
 							if ( name.indexOf( "data-" ) === 0 ) {
-								name = jQuery.camelCase( name.slice( 5 ) );
+								name = camelCase( name.slice( 5 ) );
 								dataAttr( elem, name, data[ name ] );
 							}
 						}
@@ -4491,6 +4489,26 @@ var rcssNum = new RegExp( "^(?:([+-])=|)(" + pnum + ")([a-z%]*)$", "i" );
 
 var cssExpand = [ "Top", "Right", "Bottom", "Left" ];
 
+var documentElement = document.documentElement;
+
+
+
+	var isAttached = function( elem ) {
+			return jQuery.contains( elem.ownerDocument, elem );
+		},
+		composed = { composed: true };
+
+	// Support: IE 9 - 11+, Edge 12 - 18+, iOS 10.0 - 10.2 only
+	// Check attachment across shadow DOM boundaries when possible (gh-3504)
+	// Support: iOS 10.0-10.2 only
+	// Early iOS 10 versions support `attachShadow` but not `getRootNode`,
+	// leading to errors. We need to check for `getRootNode`.
+	if ( documentElement.getRootNode ) {
+		isAttached = function( elem ) {
+			return jQuery.contains( elem.ownerDocument, elem ) ||
+				elem.getRootNode( composed ) === elem.ownerDocument;
+		};
+	}
 var isHiddenWithinTree = function( elem, el ) {
 
 		// isHiddenWithinTree might be called from jQuery#filter function;
@@ -4505,7 +4523,7 @@ var isHiddenWithinTree = function( elem, el ) {
 			// Support: Firefox <=43 - 45
 			// Disconnected elements can have computed display: none, so first confirm that elem is
 			// in the document.
-			jQuery.contains( elem.ownerDocument, elem ) &&
+			isAttached( elem ) &&
 
 			jQuery.css( elem, "display" ) === "none";
 	};
@@ -4534,8 +4552,7 @@ var swap = function( elem, options, callback, args ) {
 
 
 function adjustCSS( elem, prop, valueParts, tween ) {
-	var adjusted,
-		scale = 1,
+	var adjusted, scale,
 		maxIterations = 20,
 		currentValue = tween ?
 			function() {
@@ -4548,35 +4565,39 @@ function adjustCSS( elem, prop, valueParts, tween ) {
 		unit = valueParts && valueParts[ 3 ] || ( jQuery.cssNumber[ prop ] ? "" : "px" ),
 
 		// Starting value computation is required for potential unit mismatches
-		initialInUnit = ( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
+		initialInUnit = elem.nodeType &&
+			( jQuery.cssNumber[ prop ] || unit !== "px" && +initial ) &&
 			rcssNum.exec( jQuery.css( elem, prop ) );
 
 	if ( initialInUnit && initialInUnit[ 3 ] !== unit ) {
 
+		// Support: Firefox <=54
+		// Halve the iteration target value to prevent interference from CSS upper bounds (gh-2144)
+		initial = initial / 2;
+
 		// Trust units reported by jQuery.css
 		unit = unit || initialInUnit[ 3 ];
-
-		// Make sure we update the tween properties later on
-		valueParts = valueParts || [];
 
 		// Iteratively approximate from a nonzero starting point
 		initialInUnit = +initial || 1;
 
-		do {
+		while ( maxIterations-- ) {
 
-			// If previous iteration zeroed out, double until we get *something*.
-			// Use string for doubling so we don't accidentally see scale as unchanged below
-			scale = scale || ".5";
-
-			// Adjust and apply
-			initialInUnit = initialInUnit / scale;
+			// Evaluate and update our best guess (doubling guesses that zero out).
+			// Finish if the scale equals or crosses 1 (making the old*new product non-positive).
 			jQuery.style( elem, prop, initialInUnit + unit );
+			if ( ( 1 - scale ) * ( 1 - ( scale = currentValue() / initial || 0.5 ) ) <= 0 ) {
+				maxIterations = 0;
+			}
+			initialInUnit = initialInUnit / scale;
 
-		// Update scale, tolerating zero or NaN from tween.cur()
-		// Break the loop if scale is unchanged or perfect, or if we've just had enough.
-		} while (
-			scale !== ( scale = currentValue() / initial ) && scale !== 1 && --maxIterations
-		);
+		}
+
+		initialInUnit = initialInUnit * 2;
+		jQuery.style( elem, prop, initialInUnit + unit );
+
+		// Make sure we update the tween properties later on
+		valueParts = valueParts || [];
 	}
 
 	if ( valueParts ) {
@@ -4692,9 +4713,9 @@ jQuery.fn.extend( {
 } );
 var rcheckableType = ( /^(?:checkbox|radio)$/i );
 
-var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]+)/i );
+var rtagName = ( /<([a-z][^\/\0>\x20\t\r\n\f]*)/i );
 
-var rscriptType = ( /^$|\/(?:java|ecma)script/i );
+var rscriptType = ( /^$|^module$|\/(?:java|ecma)script/i );
 
 
 
@@ -4764,7 +4785,7 @@ function setGlobalEval( elems, refElements ) {
 var rhtml = /<|&#?\w+;/;
 
 function buildFragment( elems, context, scripts, selection, ignored ) {
-	var elem, tmp, tag, wrap, contains, j,
+	var elem, tmp, tag, wrap, attached, j,
 		fragment = context.createDocumentFragment(),
 		nodes = [],
 		i = 0,
@@ -4776,7 +4797,7 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 		if ( elem || elem === 0 ) {
 
 			// Add nodes directly
-			if ( jQuery.type( elem ) === "object" ) {
+			if ( toType( elem ) === "object" ) {
 
 				// Support: Android <=4.0 only, PhantomJS 1 only
 				// push.apply(_, arraylike) throws on ancient WebKit
@@ -4828,13 +4849,13 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 			continue;
 		}
 
-		contains = jQuery.contains( elem.ownerDocument, elem );
+		attached = isAttached( elem );
 
 		// Append to fragment
 		tmp = getAll( fragment.appendChild( elem ), "script" );
 
 		// Preserve script evaluation history
-		if ( contains ) {
+		if ( attached ) {
 			setGlobalEval( tmp );
 		}
 
@@ -4877,8 +4898,6 @@ function buildFragment( elems, context, scripts, selection, ignored ) {
 	div.innerHTML = "<textarea>x</textarea>";
 	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
 } )();
-var documentElement = document.documentElement;
-
 
 
 var
@@ -4894,8 +4913,19 @@ function returnFalse() {
 	return false;
 }
 
+// Support: IE <=9 - 11+
+// focus() and blur() are asynchronous, except when they are no-op.
+// So expect focus to be synchronous when the element is already active,
+// and blur to be synchronous when the element is not already active.
+// (focus and blur are always synchronous in other supported browsers,
+// this just defines when we can count on it).
+function expectSync( elem, type ) {
+	return ( elem === safeActiveElement() ) === ( type === "focus" );
+}
+
 // Support: IE <=9 only
-// See #13393 for more info
+// Accessing document.activeElement can throw unexpectedly
+// https://bugs.jquery.com/ticket/13393
 function safeActiveElement() {
 	try {
 		return document.activeElement;
@@ -5195,9 +5225,10 @@ jQuery.event = {
 			while ( ( handleObj = matched.handlers[ j++ ] ) &&
 				!event.isImmediatePropagationStopped() ) {
 
-				// Triggered event must either 1) have no namespace, or 2) have namespace(s)
-				// a subset or equal to those in the bound event (both can have no namespace).
-				if ( !event.rnamespace || event.rnamespace.test( handleObj.namespace ) ) {
+				// If the event is namespaced, then each handler is only invoked if it is
+				// specially universal or its namespaces are a superset of the event's.
+				if ( !event.rnamespace || handleObj.namespace === false ||
+					event.rnamespace.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
 					event.data = handleObj.data;
@@ -5286,7 +5317,7 @@ jQuery.event = {
 			enumerable: true,
 			configurable: true,
 
-			get: jQuery.isFunction( hook ) ?
+			get: isFunction( hook ) ?
 				function() {
 					if ( this.originalEvent ) {
 							return hook( this.originalEvent );
@@ -5321,39 +5352,51 @@ jQuery.event = {
 			// Prevent triggered image.load events from bubbling to window.load
 			noBubble: true
 		},
-		focus: {
-
-			// Fire native event if possible so blur/focus sequence is correct
-			trigger: function() {
-				if ( this !== safeActiveElement() && this.focus ) {
-					this.focus();
-					return false;
-				}
-			},
-			delegateType: "focusin"
-		},
-		blur: {
-			trigger: function() {
-				if ( this === safeActiveElement() && this.blur ) {
-					this.blur();
-					return false;
-				}
-			},
-			delegateType: "focusout"
-		},
 		click: {
 
-			// For checkbox, fire native event so checked state will be right
-			trigger: function() {
-				if ( this.type === "checkbox" && this.click && nodeName( this, "input" ) ) {
-					this.click();
-					return false;
+			// Utilize native event to ensure correct state for checkable inputs
+			setup: function( data ) {
+
+				// For mutual compressibility with _default, replace `this` access with a local var.
+				// `|| data` is dead code meant only to preserve the variable through minification.
+				var el = this || data;
+
+				// Claim the first handler
+				if ( rcheckableType.test( el.type ) &&
+					el.click && nodeName( el, "input" ) ) {
+
+					// dataPriv.set( el, "click", ... )
+					leverageNative( el, "click", returnTrue );
 				}
+
+				// Return false to allow normal processing in the caller
+				return false;
+			},
+			trigger: function( data ) {
+
+				// For mutual compressibility with _default, replace `this` access with a local var.
+				// `|| data` is dead code meant only to preserve the variable through minification.
+				var el = this || data;
+
+				// Force setup before triggering a click
+				if ( rcheckableType.test( el.type ) &&
+					el.click && nodeName( el, "input" ) ) {
+
+					leverageNative( el, "click" );
+				}
+
+				// Return non-false to allow normal event-path propagation
+				return true;
 			},
 
-			// For cross-browser consistency, don't fire native .click() on links
+			// For cross-browser consistency, suppress native .click() on links
+			// Also prevent it if we're currently inside a leveraged native-event stack
 			_default: function( event ) {
-				return nodeName( event.target, "a" );
+				var target = event.target;
+				return rcheckableType.test( target.type ) &&
+					target.click && nodeName( target, "input" ) &&
+					dataPriv.get( target, "click" ) ||
+					nodeName( target, "a" );
 			}
 		},
 
@@ -5369,6 +5412,93 @@ jQuery.event = {
 		}
 	}
 };
+
+// Ensure the presence of an event listener that handles manually-triggered
+// synthetic events by interrupting progress until reinvoked in response to
+// *native* events that it fires directly, ensuring that state changes have
+// already occurred before other listeners are invoked.
+function leverageNative( el, type, expectSync ) {
+
+	// Missing expectSync indicates a trigger call, which must force setup through jQuery.event.add
+	if ( !expectSync ) {
+		if ( dataPriv.get( el, type ) === undefined ) {
+			jQuery.event.add( el, type, returnTrue );
+		}
+		return;
+	}
+
+	// Register the controller as a special universal handler for all event namespaces
+	dataPriv.set( el, type, false );
+	jQuery.event.add( el, type, {
+		namespace: false,
+		handler: function( event ) {
+			var notAsync, result,
+				saved = dataPriv.get( this, type );
+
+			if ( ( event.isTrigger & 1 ) && this[ type ] ) {
+
+				// Interrupt processing of the outer synthetic .trigger()ed event
+				// Saved data should be false in such cases, but might be a leftover capture object
+				// from an async native handler (gh-4350)
+				if ( !saved.length ) {
+
+					// Store arguments for use when handling the inner native event
+					// There will always be at least one argument (an event object), so this array
+					// will not be confused with a leftover capture object.
+					saved = slice.call( arguments );
+					dataPriv.set( this, type, saved );
+
+					// Trigger the native event and capture its result
+					// Support: IE <=9 - 11+
+					// focus() and blur() are asynchronous
+					notAsync = expectSync( this, type );
+					this[ type ]();
+					result = dataPriv.get( this, type );
+					if ( saved !== result || notAsync ) {
+						dataPriv.set( this, type, false );
+					} else {
+						result = {};
+					}
+					if ( saved !== result ) {
+
+						// Cancel the outer synthetic event
+						event.stopImmediatePropagation();
+						event.preventDefault();
+						return result.value;
+					}
+
+				// If this is an inner synthetic event for an event with a bubbling surrogate
+				// (focus or blur), assume that the surrogate already propagated from triggering the
+				// native event and prevent that from happening again here.
+				// This technically gets the ordering wrong w.r.t. to `.trigger()` (in which the
+				// bubbling surrogate propagates *after* the non-bubbling base), but that seems
+				// less bad than duplication.
+				} else if ( ( jQuery.event.special[ type ] || {} ).delegateType ) {
+					event.stopPropagation();
+				}
+
+			// If this is a native event triggered above, everything is now in order
+			// Fire an inner synthetic event with the original arguments
+			} else if ( saved.length ) {
+
+				// ...and capture the result
+				dataPriv.set( this, type, {
+					value: jQuery.event.trigger(
+
+						// Support: IE <=9 - 11+
+						// Extend with the prototype to reset the above stopImmediatePropagation()
+						jQuery.extend( saved[ 0 ], jQuery.Event.prototype ),
+						saved.slice( 1 ),
+						this
+					)
+				} );
+
+				// Abort handling of the native event
+				event.stopImmediatePropagation();
+			}
+		}
+	} );
+}
 
 jQuery.removeEvent = function( elem, type, handle ) {
 
@@ -5421,7 +5551,7 @@ jQuery.Event = function( src, props ) {
 	}
 
 	// Create a timestamp if incoming event doesn't have one
-	this.timeStamp = src && src.timeStamp || jQuery.now();
+	this.timeStamp = src && src.timeStamp || Date.now();
 
 	// Mark it as fixed
 	this[ jQuery.expando ] = true;
@@ -5482,6 +5612,7 @@ jQuery.each( {
 	shiftKey: true,
 	view: true,
 	"char": true,
+	code: true,
 	charCode: true,
 	key: true,
 	keyCode: true,
@@ -5527,6 +5658,33 @@ jQuery.each( {
 		return event.which;
 	}
 }, jQuery.event.addProp );
+
+jQuery.each( { focus: "focusin", blur: "focusout" }, function( type, delegateType ) {
+	jQuery.event.special[ type ] = {
+
+		// Utilize native event if possible so blur/focus sequence is correct
+		setup: function() {
+
+			// Claim the first handler
+			// dataPriv.set( this, "focus", ... )
+			// dataPriv.set( this, "blur", ... )
+			leverageNative( this, type, expectSync );
+
+			// Return false to allow normal processing in the caller
+			return false;
+		},
+		trigger: function() {
+
+			// Force setup before trigger
+			leverageNative( this, type );
+
+			// Return non-false to allow normal event-path propagation
+			return true;
+		},
+
+		delegateType: delegateType
+	};
+} );
 
 // Create mouseenter/leave events using mouseover/out and event-time checks
 // so that event delegation works in jQuery.
@@ -5620,14 +5778,13 @@ var
 
 	/* eslint-enable */
 
-	// Support: IE <=10 - 11, Edge 12 - 13
+	// Support: IE <=10 - 11, Edge 12 - 13 only
 	// In IE/Edge using regex groups here causes severe slowdowns.
 	// See https://connect.microsoft.com/IE/feedback/details/1736512/
 	rnoInnerhtml = /<script|<style|<link/i,
 
 	// checked="checked" or checked
 	rchecked = /checked\s*(?:[^=]|=\s*.checked.)/i,
-	rscriptTypeMasked = /^true\/(.*)/,
 	rcleanScript = /^\s*<!(?:\[CDATA\[|--)|(?:\]\]|--)>\s*$/g;
 
 // Prefer a tbody over its parent table for containing new rows
@@ -5635,7 +5792,7 @@ function manipulationTarget( elem, content ) {
 	if ( nodeName( elem, "table" ) &&
 		nodeName( content.nodeType !== 11 ? content : content.firstChild, "tr" ) ) {
 
-		return jQuery( ">tbody", elem )[ 0 ] || elem;
+		return jQuery( elem ).children( "tbody" )[ 0 ] || elem;
 	}
 
 	return elem;
@@ -5647,10 +5804,8 @@ function disableScript( elem ) {
 	return elem;
 }
 function restoreScript( elem ) {
-	var match = rscriptTypeMasked.exec( elem.type );
-
-	if ( match ) {
-		elem.type = match[ 1 ];
+	if ( ( elem.type || "" ).slice( 0, 5 ) === "true/" ) {
+		elem.type = elem.type.slice( 5 );
 	} else {
 		elem.removeAttribute( "type" );
 	}
@@ -5716,15 +5871,15 @@ function domManip( collection, args, callback, ignored ) {
 		l = collection.length,
 		iNoClone = l - 1,
 		value = args[ 0 ],
-		isFunction = jQuery.isFunction( value );
+		valueIsFunction = isFunction( value );
 
 	// We can't cloneNode fragments that contain checked, in WebKit
-	if ( isFunction ||
+	if ( valueIsFunction ||
 			( l > 1 && typeof value === "string" &&
 				!support.checkClone && rchecked.test( value ) ) ) {
 		return collection.each( function( index ) {
 			var self = collection.eq( index );
-			if ( isFunction ) {
+			if ( valueIsFunction ) {
 				args[ 0 ] = value.call( this, index, self.html() );
 			}
 			domManip( self, args, callback, ignored );
@@ -5778,14 +5933,16 @@ function domManip( collection, args, callback, ignored ) {
 						!dataPriv.access( node, "globalEval" ) &&
 						jQuery.contains( doc, node ) ) {
 
-						if ( node.src ) {
+						if ( node.src && ( node.type || "" ).toLowerCase()  !== "module" ) {
 
 							// Optional AJAX dependency, but won't run scripts if not present
-							if ( jQuery._evalUrl ) {
-								jQuery._evalUrl( node.src );
+							if ( jQuery._evalUrl && !node.noModule ) {
+								jQuery._evalUrl( node.src, {
+									nonce: node.nonce || node.getAttribute( "nonce" )
+								} );
 							}
 						} else {
-							DOMEval( node.textContent.replace( rcleanScript, "" ), doc );
+							DOMEval( node.textContent.replace( rcleanScript, "" ), node, doc );
 						}
 					}
 				}
@@ -5807,7 +5964,7 @@ function remove( elem, selector, keepData ) {
 		}
 
 		if ( node.parentNode ) {
-			if ( keepData && jQuery.contains( node.ownerDocument, node ) ) {
+			if ( keepData && isAttached( node ) ) {
 				setGlobalEval( getAll( node, "script" ) );
 			}
 			node.parentNode.removeChild( node );
@@ -5825,7 +5982,7 @@ jQuery.extend( {
 	clone: function( elem, dataAndEvents, deepDataAndEvents ) {
 		var i, l, srcElements, destElements,
 			clone = elem.cloneNode( true ),
-			inPage = jQuery.contains( elem.ownerDocument, elem );
+			inPage = isAttached( elem );
 
 		// Fix IE cloning issues
 		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
@@ -6065,8 +6222,6 @@ jQuery.each( {
 		return this.pushStack( ret );
 	};
 } );
-var rmargin = ( /^margin/ );
-
 var rnumnonpx = new RegExp( "^(" + pnum + ")(?!px)[a-z%]+$", "i" );
 
 var getStyles = function( elem ) {
@@ -6083,6 +6238,8 @@ var getStyles = function( elem ) {
 		return view.getComputedStyle( elem );
 	};
 
+var rboxStyle = new RegExp( cssExpand.join( "|" ), "i" );
+
 
 
 ( function() {
@@ -6096,25 +6253,35 @@ var getStyles = function( elem ) {
 			return;
 		}
 
+		container.style.cssText = "position:absolute;left:-11111px;width:60px;" +
+			"margin-top:1px;padding:0;border:0";
 		div.style.cssText =
-			"box-sizing:border-box;" +
-			"position:relative;display:block;" +
+			"position:relative;display:block;box-sizing:border-box;overflow:scroll;" +
 			"margin:auto;border:1px;padding:1px;" +
-			"top:1%;width:50%";
-		div.innerHTML = "";
-		documentElement.appendChild( container );
+			"width:60%;top:1%";
+		documentElement.appendChild( container ).appendChild( div );
 
 		var divStyle = window.getComputedStyle( div );
 		pixelPositionVal = divStyle.top !== "1%";
 
 		// Support: Android 4.0 - 4.3 only, Firefox <=3 - 44
-		reliableMarginLeftVal = divStyle.marginLeft === "2px";
-		boxSizingReliableVal = divStyle.width === "4px";
+		reliableMarginLeftVal = roundPixelMeasures( divStyle.marginLeft ) === 12;
 
-		// Support: Android 4.0 - 4.3 only
+		// Support: Android 4.0 - 4.3 only, Safari <=9.1 - 10.1, iOS <=7.0 - 9.3
 		// Some styles come back with percentage values, even though they shouldn't
-		div.style.marginRight = "50%";
-		pixelMarginRightVal = divStyle.marginRight === "4px";
+		div.style.right = "60%";
+		pixelBoxStylesVal = roundPixelMeasures( divStyle.right ) === 36;
+
+		// Support: IE 9 - 11 only
+		// Detect misreporting of content dimensions for box-sizing:border-box elements
+		boxSizingReliableVal = roundPixelMeasures( divStyle.width ) === 36;
+
+		// Support: IE 9 only
+		// Detect overflow:scroll screwiness (gh-3699)
+		// Support: Chrome <=64
+		// Don't get tricked when zoom affects offsetWidth (gh-4029)
+		div.style.position = "absolute";
+		scrollboxSizeVal = roundPixelMeasures( div.offsetWidth / 3 ) === 12;
 
 		documentElement.removeChild( container );
 
@@ -6123,7 +6290,12 @@ var getStyles = function( elem ) {
 		div = null;
 	}
 
-	var pixelPositionVal, boxSizingReliableVal, pixelMarginRightVal, reliableMarginLeftVal,
+	function roundPixelMeasures( measure ) {
+		return Math.round( parseFloat( measure ) );
+	}
+
+	var pixelPositionVal, boxSizingReliableVal, scrollboxSizeVal, pixelBoxStylesVal,
+		reliableMarginLeftVal,
 		container = document.createElement( "div" ),
 		div = document.createElement( "div" );
 
@@ -6138,26 +6310,26 @@ var getStyles = function( elem ) {
 	div.cloneNode( true ).style.backgroundClip = "";
 	support.clearCloneStyle = div.style.backgroundClip === "content-box";
 
-	container.style.cssText = "border:0;width:8px;height:0;top:0;left:-9999px;" +
-		"padding:0;margin-top:1px;position:absolute";
-	container.appendChild( div );
-
 	jQuery.extend( support, {
-		pixelPosition: function() {
-			computeStyleTests();
-			return pixelPositionVal;
-		},
 		boxSizingReliable: function() {
 			computeStyleTests();
 			return boxSizingReliableVal;
 		},
-		pixelMarginRight: function() {
+		pixelBoxStyles: function() {
 			computeStyleTests();
-			return pixelMarginRightVal;
+			return pixelBoxStylesVal;
+		},
+		pixelPosition: function() {
+			computeStyleTests();
+			return pixelPositionVal;
 		},
 		reliableMarginLeft: function() {
 			computeStyleTests();
 			return reliableMarginLeftVal;
+		},
+		scrollboxSize: function() {
+			computeStyleTests();
+			return scrollboxSizeVal;
 		}
 	} );
 } )();
@@ -6180,7 +6352,7 @@ function curCSS( elem, name, computed ) {
 	if ( computed ) {
 		ret = computed.getPropertyValue( name ) || computed[ name ];
 
-		if ( ret === "" && !jQuery.contains( elem.ownerDocument, elem ) ) {
+		if ( ret === "" && !isAttached( elem ) ) {
 			ret = jQuery.style( elem, name );
 		}
 
@@ -6189,7 +6361,7 @@ function curCSS( elem, name, computed ) {
 		// but width seems to be reliably pixels.
 		// This is against the CSSOM draft spec:
 		// https://drafts.csswg.org/cssom/#resolved-values
-		if ( !support.pixelMarginRight() && rnumnonpx.test( ret ) && rmargin.test( name ) ) {
+		if ( !support.pixelBoxStyles() && rnumnonpx.test( ret ) && rboxStyle.test( name ) ) {
 
 			// Remember the original values
 			width = style.width;
@@ -6236,29 +6408,12 @@ function addGetHookIf( conditionFn, hookFn ) {
 }
 
 
-var
+var cssPrefixes = [ "Webkit", "Moz", "ms" ],
+	emptyStyle = document.createElement( "div" ).style,
+	vendorProps = {};
 
-	// Swappable if display is none or starts with table
-	// except "table", "table-cell", or "table-caption"
-	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
-	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
-	rcustomProp = /^--/,
-	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
-	cssNormalTransform = {
-		letterSpacing: "0",
-		fontWeight: "400"
-	},
-
-	cssPrefixes = [ "Webkit", "Moz", "ms" ],
-	emptyStyle = document.createElement( "div" ).style;
-
-// Return a css property mapped to a potentially vendor prefixed property
+// Return a vendor-prefixed property or undefined
 function vendorPropName( name ) {
-
-	// Shortcut for names that are not vendor prefixed
-	if ( name in emptyStyle ) {
-		return name;
-	}
 
 	// Check for vendor prefixed names
 	var capName = name[ 0 ].toUpperCase() + name.slice( 1 ),
@@ -6272,15 +6427,32 @@ function vendorPropName( name ) {
 	}
 }
 
-// Return a property mapped along what jQuery.cssProps suggests or to
-// a vendor prefixed property.
+// Return a potentially-mapped jQuery.cssProps or vendor prefixed property
 function finalPropName( name ) {
-	var ret = jQuery.cssProps[ name ];
-	if ( !ret ) {
-		ret = jQuery.cssProps[ name ] = vendorPropName( name ) || name;
+	var final = jQuery.cssProps[ name ] || vendorProps[ name ];
+
+	if ( final ) {
+		return final;
 	}
-	return ret;
+	if ( name in emptyStyle ) {
+		return name;
+	}
+	return vendorProps[ name ] = vendorPropName( name ) || name;
 }
+
+
+var
+
+	// Swappable if display is none or starts with table
+	// except "table", "table-cell", or "table-caption"
+	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
+	rcustomProp = /^--/,
+	cssShow = { position: "absolute", visibility: "hidden", display: "block" },
+	cssNormalTransform = {
+		letterSpacing: "0",
+		fontWeight: "400"
+	};
 
 function setPositiveNumber( elem, value, subtract ) {
 
@@ -6294,87 +6466,137 @@ function setPositiveNumber( elem, value, subtract ) {
 		value;
 }
 
-function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
-	var i,
-		val = 0;
+function boxModelAdjustment( elem, dimension, box, isBorderBox, styles, computedVal ) {
+	var i = dimension === "width" ? 1 : 0,
+		extra = 0,
+		delta = 0;
 
-	// If we already have the right measurement, avoid augmentation
-	if ( extra === ( isBorderBox ? "border" : "content" ) ) {
-		i = 4;
-
-	// Otherwise initialize for horizontal or vertical properties
-	} else {
-		i = name === "width" ? 1 : 0;
+	// Adjustment may not be necessary
+	if ( box === ( isBorderBox ? "border" : "content" ) ) {
+		return 0;
 	}
 
 	for ( ; i < 4; i += 2 ) {
 
-		// Both box models exclude margin, so add it if we want it
-		if ( extra === "margin" ) {
-			val += jQuery.css( elem, extra + cssExpand[ i ], true, styles );
+		// Both box models exclude margin
+		if ( box === "margin" ) {
+			delta += jQuery.css( elem, box + cssExpand[ i ], true, styles );
 		}
 
-		if ( isBorderBox ) {
+		// If we get here with a content-box, we're seeking "padding" or "border" or "margin"
+		if ( !isBorderBox ) {
 
-			// border-box includes padding, so remove it if we want content
-			if ( extra === "content" ) {
-				val -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+			// Add padding
+			delta += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+
+			// For "border" or "margin", add border
+			if ( box !== "padding" ) {
+				delta += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
+
+			// But still keep track of it otherwise
+			} else {
+				extra += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
 
-			// At this point, extra isn't border nor margin, so remove border
-			if ( extra !== "margin" ) {
-				val -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
-			}
+		// If we get here with a border-box (content + padding + border), we're seeking "content" or
+		// "padding" or "margin"
 		} else {
 
-			// At this point, extra isn't content, so add padding
-			val += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+			// For "content", subtract padding
+			if ( box === "content" ) {
+				delta -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
+			}
 
-			// At this point, extra isn't content nor padding, so add border
-			if ( extra !== "padding" ) {
-				val += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
+			// For "content" or "padding", subtract border
+			if ( box !== "margin" ) {
+				delta -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
 		}
 	}
 
-	return val;
+	// Account for positive content-box scroll gutter when requested by providing computedVal
+	if ( !isBorderBox && computedVal >= 0 ) {
+
+		// offsetWidth/offsetHeight is a rounded sum of content, padding, scroll gutter, and border
+		// Assuming integer scroll gutter, subtract the rest and round down
+		delta += Math.max( 0, Math.ceil(
+			elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ] -
+			computedVal -
+			delta -
+			extra -
+			0.5
+
+		// If offsetWidth/offsetHeight is unknown, then we can't determine content-box scroll gutter
+		// Use an explicit zero to avoid NaN (gh-3964)
+		) ) || 0;
+	}
+
+	return delta;
 }
 
-function getWidthOrHeight( elem, name, extra ) {
+function getWidthOrHeight( elem, dimension, extra ) {
 
 	// Start with computed style
-	var valueIsBorderBox,
-		styles = getStyles( elem ),
-		val = curCSS( elem, name, styles ),
+	var styles = getStyles( elem ),
+
+		// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-4322).
+		// Fake content-box until we know it's needed to know the true value.
+		boxSizingNeeded = !support.boxSizingReliable() || extra,
+		isBorderBox = boxSizingNeeded &&
+			jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
+		valueIsBorderBox = isBorderBox,
+
+		val = curCSS( elem, dimension, styles ),
+		offsetProp = "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 );
+
+	// Support: Firefox <=54
+	// Return a confounding non-pixel value or feign ignorance, as appropriate.
+	if ( rnumnonpx.test( val ) ) {
+		if ( !extra ) {
+			return val;
+		}
+		val = "auto";
+	}
+
+
+	// Fall back to offsetWidth/offsetHeight when value is "auto"
+	// This happens for inline elements with no explicit setting (gh-3571)
+	// Support: Android <=4.1 - 4.3 only
+	// Also use offsetWidth/offsetHeight for misreported inline dimensions (gh-3602)
+	// Support: IE 9-11 only
+	// Also use offsetWidth/offsetHeight for when box sizing is unreliable
+	// We use getClientRects() to check for hidden/disconnected.
+	// In those cases, the computed value can be trusted to be border-box
+	if ( ( !support.boxSizingReliable() && isBorderBox ||
+		val === "auto" ||
+		!parseFloat( val ) && jQuery.css( elem, "display", false, styles ) === "inline" ) &&
+		elem.getClientRects().length ) {
+
 		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
 
-	// Computed unit is not pixels. Stop here and return.
-	if ( rnumnonpx.test( val ) ) {
-		return val;
+		// Where available, offsetWidth/offsetHeight approximate border box dimensions.
+		// Where not available (e.g., SVG), assume unreliable box-sizing and interpret the
+		// retrieved value as a content box dimension.
+		valueIsBorderBox = offsetProp in elem;
+		if ( valueIsBorderBox ) {
+			val = elem[ offsetProp ];
+		}
 	}
 
-	// Check for style in case a browser which returns unreliable values
-	// for getComputedStyle silently falls back to the reliable elem.style
-	valueIsBorderBox = isBorderBox &&
-		( support.boxSizingReliable() || val === elem.style[ name ] );
-
-	// Fall back to offsetWidth/Height when value is "auto"
-	// This happens for inline elements with no explicit setting (gh-3571)
-	if ( val === "auto" ) {
-		val = elem[ "offset" + name[ 0 ].toUpperCase() + name.slice( 1 ) ];
-	}
-
-	// Normalize "", auto, and prepare for extra
+	// Normalize "" and auto
 	val = parseFloat( val ) || 0;
 
-	// Use the active box-sizing model to add/subtract irrelevant styles
+	// Adjust for the element's box model
 	return ( val +
-		augmentWidthOrHeight(
+		boxModelAdjustment(
 			elem,
-			name,
+			dimension,
 			extra || ( isBorderBox ? "border" : "content" ),
 			valueIsBorderBox,
-			styles
+			styles,
+
+			// Provide the current computed size to request scroll gutter calculation (gh-3589)
+			val
 		)
 	) + "px";
 }
@@ -6404,6 +6626,13 @@ jQuery.extend( {
 		"flexGrow": true,
 		"flexShrink": true,
 		"fontWeight": true,
+		"gridArea": true,
+		"gridColumn": true,
+		"gridColumnEnd": true,
+		"gridColumnStart": true,
+		"gridRow": true,
+		"gridRowEnd": true,
+		"gridRowStart": true,
 		"lineHeight": true,
 		"opacity": true,
 		"order": true,
@@ -6415,9 +6644,7 @@ jQuery.extend( {
 
 	// Add in properties whose names you wish to fix before
 	// setting or getting the value
-	cssProps: {
-		"float": "cssFloat"
-	},
+	cssProps: {},
 
 	// Get and set the style property on a DOM Node
 	style: function( elem, name, value, extra ) {
@@ -6429,7 +6656,7 @@ jQuery.extend( {
 
 		// Make sure that we're working with the right name
 		var ret, type, hooks,
-			origName = jQuery.camelCase( name ),
+			origName = camelCase( name ),
 			isCustomProp = rcustomProp.test( name ),
 			style = elem.style;
 
@@ -6461,7 +6688,9 @@ jQuery.extend( {
 			}
 
 			// If a number was passed in, add the unit (except for certain CSS properties)
-			if ( type === "number" ) {
+			// The isCustomProp check can be removed in jQuery 4.0 when we only auto-append
+			// "px" to a few hardcoded values.
+			if ( type === "number" && !isCustomProp ) {
 				value += ret && ret[ 3 ] || ( jQuery.cssNumber[ origName ] ? "" : "px" );
 			}
 
@@ -6497,7 +6726,7 @@ jQuery.extend( {
 
 	css: function( elem, name, extra, styles ) {
 		var val, num, hooks,
-			origName = jQuery.camelCase( name ),
+			origName = camelCase( name ),
 			isCustomProp = rcustomProp.test( name );
 
 		// Make sure that we're working with the right name. We don't
@@ -6535,8 +6764,8 @@ jQuery.extend( {
 	}
 } );
 
-jQuery.each( [ "height", "width" ], function( i, name ) {
-	jQuery.cssHooks[ name ] = {
+jQuery.each( [ "height", "width" ], function( i, dimension ) {
+	jQuery.cssHooks[ dimension ] = {
 		get: function( elem, computed, extra ) {
 			if ( computed ) {
 
@@ -6552,29 +6781,52 @@ jQuery.each( [ "height", "width" ], function( i, name ) {
 					// in IE throws an error.
 					( !elem.getClientRects().length || !elem.getBoundingClientRect().width ) ?
 						swap( elem, cssShow, function() {
-							return getWidthOrHeight( elem, name, extra );
+							return getWidthOrHeight( elem, dimension, extra );
 						} ) :
-						getWidthOrHeight( elem, name, extra );
+						getWidthOrHeight( elem, dimension, extra );
 			}
 		},
 
 		set: function( elem, value, extra ) {
 			var matches,
-				styles = extra && getStyles( elem ),
-				subtract = extra && augmentWidthOrHeight(
-					elem,
-					name,
-					extra,
+				styles = getStyles( elem ),
+
+				// Only read styles.position if the test has a chance to fail
+				// to avoid forcing a reflow.
+				scrollboxSizeBuggy = !support.scrollboxSize() &&
+					styles.position === "absolute",
+
+				// To avoid forcing a reflow, only fetch boxSizing if we need it (gh-3991)
+				boxSizingNeeded = scrollboxSizeBuggy || extra,
+				isBorderBox = boxSizingNeeded &&
 					jQuery.css( elem, "boxSizing", false, styles ) === "border-box",
-					styles
+				subtract = extra ?
+					boxModelAdjustment(
+						elem,
+						dimension,
+						extra,
+						isBorderBox,
+						styles
+					) :
+					0;
+
+			// Account for unreliable border-box dimensions by comparing offset* to computed and
+			// faking a content-box to get border and padding (gh-3699)
+			if ( isBorderBox && scrollboxSizeBuggy ) {
+				subtract -= Math.ceil(
+					elem[ "offset" + dimension[ 0 ].toUpperCase() + dimension.slice( 1 ) ] -
+					parseFloat( styles[ dimension ] ) -
+					boxModelAdjustment( elem, dimension, "border", false, styles ) -
+					0.5
 				);
+			}
 
 			// Convert to pixels if value adjustment is needed
 			if ( subtract && ( matches = rcssNum.exec( value ) ) &&
 				( matches[ 3 ] || "px" ) !== "px" ) {
 
-				elem.style[ name ] = value;
-				value = jQuery.css( elem, name );
+				elem.style[ dimension ] = value;
+				value = jQuery.css( elem, dimension );
 			}
 
 			return setPositiveNumber( elem, value, subtract );
@@ -6618,7 +6870,7 @@ jQuery.each( {
 		}
 	};
 
-	if ( !rmargin.test( prefix ) ) {
+	if ( prefix !== "margin" ) {
 		jQuery.cssHooks[ prefix + suffix ].set = setPositiveNumber;
 	}
 } );
@@ -6728,9 +6980,9 @@ Tween.propHooks = {
 			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
-			} else if ( tween.elem.nodeType === 1 &&
-				( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null ||
-					jQuery.cssHooks[ tween.prop ] ) ) {
+			} else if ( tween.elem.nodeType === 1 && (
+					jQuery.cssHooks[ tween.prop ] ||
+					tween.elem.style[ finalPropName( tween.prop ) ] != null ) ) {
 				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
 			} else {
 				tween.elem[ tween.prop ] = tween.now;
@@ -6789,7 +7041,7 @@ function createFxNow() {
 	window.setTimeout( function() {
 		fxNow = undefined;
 	} );
-	return ( fxNow = jQuery.now() );
+	return ( fxNow = Date.now() );
 }
 
 // Generate parameters to create a standard animation
@@ -6893,9 +7145,10 @@ function defaultPrefilter( elem, props, opts ) {
 	// Restrict "overflow" and "display" styles during box animations
 	if ( isBox && elem.nodeType === 1 ) {
 
-		// Support: IE <=9 - 11, Edge 12 - 13
+		// Support: IE <=9 - 11, Edge 12 - 15
 		// Record all 3 overflow attributes because IE does not infer the shorthand
-		// from identically-valued overflowX and overflowY
+		// from identically-valued overflowX and overflowY and Edge just mirrors
+		// the overflowX value there.
 		opts.overflow = [ style.overflow, style.overflowX, style.overflowY ];
 
 		// Identify a display type, preferring old show/hide data over the CSS cascade
@@ -7003,7 +7256,7 @@ function propFilter( props, specialEasing ) {
 
 	// camelCase, specialEasing and expand cssHook pass
 	for ( index in props ) {
-		name = jQuery.camelCase( index );
+		name = camelCase( index );
 		easing = specialEasing[ name ];
 		value = props[ index ];
 		if ( Array.isArray( value ) ) {
@@ -7128,9 +7381,9 @@ function Animation( elem, properties, options ) {
 	for ( ; index < length; index++ ) {
 		result = Animation.prefilters[ index ].call( animation, elem, props, animation.opts );
 		if ( result ) {
-			if ( jQuery.isFunction( result.stop ) ) {
+			if ( isFunction( result.stop ) ) {
 				jQuery._queueHooks( animation.elem, animation.opts.queue ).stop =
-					jQuery.proxy( result.stop, result );
+					result.stop.bind( result );
 			}
 			return result;
 		}
@@ -7138,7 +7391,7 @@ function Animation( elem, properties, options ) {
 
 	jQuery.map( props, createTween, animation );
 
-	if ( jQuery.isFunction( animation.opts.start ) ) {
+	if ( isFunction( animation.opts.start ) ) {
 		animation.opts.start.call( elem, animation );
 	}
 
@@ -7171,7 +7424,7 @@ jQuery.Animation = jQuery.extend( Animation, {
 	},
 
 	tweener: function( props, callback ) {
-		if ( jQuery.isFunction( props ) ) {
+		if ( isFunction( props ) ) {
 			callback = props;
 			props = [ "*" ];
 		} else {
@@ -7203,9 +7456,9 @@ jQuery.Animation = jQuery.extend( Animation, {
 jQuery.speed = function( speed, easing, fn ) {
 	var opt = speed && typeof speed === "object" ? jQuery.extend( {}, speed ) : {
 		complete: fn || !fn && easing ||
-			jQuery.isFunction( speed ) && speed,
+			isFunction( speed ) && speed,
 		duration: speed,
-		easing: fn && easing || easing && !jQuery.isFunction( easing ) && easing
+		easing: fn && easing || easing && !isFunction( easing ) && easing
 	};
 
 	// Go to the end state if fx are off
@@ -7232,7 +7485,7 @@ jQuery.speed = function( speed, easing, fn ) {
 	opt.old = opt.complete;
 
 	opt.complete = function() {
-		if ( jQuery.isFunction( opt.old ) ) {
+		if ( isFunction( opt.old ) ) {
 			opt.old.call( this );
 		}
 
@@ -7396,7 +7649,7 @@ jQuery.fx.tick = function() {
 		i = 0,
 		timers = jQuery.timers;
 
-	fxNow = jQuery.now();
+	fxNow = Date.now();
 
 	for ( ; i < timers.length; i++ ) {
 		timer = timers[ i ];
@@ -7749,7 +8002,7 @@ jQuery.each( [
 
 
 	// Strip and collapse whitespace according to HTML spec
-	// https://html.spec.whatwg.org/multipage/infrastructure.html#strip-and-collapse-whitespace
+	// https://infra.spec.whatwg.org/#strip-and-collapse-ascii-whitespace
 	function stripAndCollapse( value ) {
 		var tokens = value.match( rnothtmlwhite ) || [];
 		return tokens.join( " " );
@@ -7760,20 +8013,30 @@ function getClass( elem ) {
 	return elem.getAttribute && elem.getAttribute( "class" ) || "";
 }
 
+function classesToArray( value ) {
+	if ( Array.isArray( value ) ) {
+		return value;
+	}
+	if ( typeof value === "string" ) {
+		return value.match( rnothtmlwhite ) || [];
+	}
+	return [];
+}
+
 jQuery.fn.extend( {
 	addClass: function( value ) {
 		var classes, elem, cur, curValue, clazz, j, finalValue,
 			i = 0;
 
-		if ( jQuery.isFunction( value ) ) {
+		if ( isFunction( value ) ) {
 			return this.each( function( j ) {
 				jQuery( this ).addClass( value.call( this, j, getClass( this ) ) );
 			} );
 		}
 
-		if ( typeof value === "string" && value ) {
-			classes = value.match( rnothtmlwhite ) || [];
+		classes = classesToArray( value );
 
+		if ( classes.length ) {
 			while ( ( elem = this[ i++ ] ) ) {
 				curValue = getClass( elem );
 				cur = elem.nodeType === 1 && ( " " + stripAndCollapse( curValue ) + " " );
@@ -7802,7 +8065,7 @@ jQuery.fn.extend( {
 		var classes, elem, cur, curValue, clazz, j, finalValue,
 			i = 0;
 
-		if ( jQuery.isFunction( value ) ) {
+		if ( isFunction( value ) ) {
 			return this.each( function( j ) {
 				jQuery( this ).removeClass( value.call( this, j, getClass( this ) ) );
 			} );
@@ -7812,9 +8075,9 @@ jQuery.fn.extend( {
 			return this.attr( "class", "" );
 		}
 
-		if ( typeof value === "string" && value ) {
-			classes = value.match( rnothtmlwhite ) || [];
+		classes = classesToArray( value );
 
+		if ( classes.length ) {
 			while ( ( elem = this[ i++ ] ) ) {
 				curValue = getClass( elem );
 
@@ -7844,13 +8107,14 @@ jQuery.fn.extend( {
 	},
 
 	toggleClass: function( value, stateVal ) {
-		var type = typeof value;
+		var type = typeof value,
+			isValidValue = type === "string" || Array.isArray( value );
 
-		if ( typeof stateVal === "boolean" && type === "string" ) {
+		if ( typeof stateVal === "boolean" && isValidValue ) {
 			return stateVal ? this.addClass( value ) : this.removeClass( value );
 		}
 
-		if ( jQuery.isFunction( value ) ) {
+		if ( isFunction( value ) ) {
 			return this.each( function( i ) {
 				jQuery( this ).toggleClass(
 					value.call( this, i, getClass( this ), stateVal ),
@@ -7862,12 +8126,12 @@ jQuery.fn.extend( {
 		return this.each( function() {
 			var className, i, self, classNames;
 
-			if ( type === "string" ) {
+			if ( isValidValue ) {
 
 				// Toggle individual class names
 				i = 0;
 				self = jQuery( this );
-				classNames = value.match( rnothtmlwhite ) || [];
+				classNames = classesToArray( value );
 
 				while ( ( className = classNames[ i++ ] ) ) {
 
@@ -7926,7 +8190,7 @@ var rreturn = /\r/g;
 
 jQuery.fn.extend( {
 	val: function( value ) {
-		var hooks, ret, isFunction,
+		var hooks, ret, valueIsFunction,
 			elem = this[ 0 ];
 
 		if ( !arguments.length ) {
@@ -7955,7 +8219,7 @@ jQuery.fn.extend( {
 			return;
 		}
 
-		isFunction = jQuery.isFunction( value );
+		valueIsFunction = isFunction( value );
 
 		return this.each( function( i ) {
 			var val;
@@ -7964,7 +8228,7 @@ jQuery.fn.extend( {
 				return;
 			}
 
-			if ( isFunction ) {
+			if ( valueIsFunction ) {
 				val = value.call( this, i, jQuery( this ).val() );
 			} else {
 				val = value;
@@ -8106,18 +8370,24 @@ jQuery.each( [ "radio", "checkbox" ], function() {
 // Return jQuery for attributes-only inclusion
 
 
-var rfocusMorph = /^(?:focusinfocus|focusoutblur)$/;
+support.focusin = "onfocusin" in window;
+
+
+var rfocusMorph = /^(?:focusinfocus|focusoutblur)$/,
+	stopPropagationCallback = function( e ) {
+		e.stopPropagation();
+	};
 
 jQuery.extend( jQuery.event, {
 
 	trigger: function( event, data, elem, onlyHandlers ) {
 
-		var i, cur, tmp, bubbleType, ontype, handle, special,
+		var i, cur, tmp, bubbleType, ontype, handle, special, lastElement,
 			eventPath = [ elem || document ],
 			type = hasOwn.call( event, "type" ) ? event.type : event,
 			namespaces = hasOwn.call( event, "namespace" ) ? event.namespace.split( "." ) : [];
 
-		cur = tmp = elem = elem || document;
+		cur = lastElement = tmp = elem = elem || document;
 
 		// Don't do events on text and comment nodes
 		if ( elem.nodeType === 3 || elem.nodeType === 8 ) {
@@ -8169,7 +8439,7 @@ jQuery.extend( jQuery.event, {
 
 		// Determine event propagation path in advance, per W3C events spec (#9951)
 		// Bubble up to document, then to window; watch for a global ownerDocument var (#9724)
-		if ( !onlyHandlers && !special.noBubble && !jQuery.isWindow( elem ) ) {
+		if ( !onlyHandlers && !special.noBubble && !isWindow( elem ) ) {
 
 			bubbleType = special.delegateType || type;
 			if ( !rfocusMorph.test( bubbleType + type ) ) {
@@ -8189,7 +8459,7 @@ jQuery.extend( jQuery.event, {
 		// Fire handlers on the event path
 		i = 0;
 		while ( ( cur = eventPath[ i++ ] ) && !event.isPropagationStopped() ) {
-
+			lastElement = cur;
 			event.type = i > 1 ?
 				bubbleType :
 				special.bindType || type;
@@ -8221,7 +8491,7 @@ jQuery.extend( jQuery.event, {
 
 				// Call a native DOM method on the target with the same name as the event.
 				// Don't do default actions on window, that's where global variables be (#6170)
-				if ( ontype && jQuery.isFunction( elem[ type ] ) && !jQuery.isWindow( elem ) ) {
+				if ( ontype && isFunction( elem[ type ] ) && !isWindow( elem ) ) {
 
 					// Don't re-trigger an onFOO event when we call its FOO() method
 					tmp = elem[ ontype ];
@@ -8232,7 +8502,17 @@ jQuery.extend( jQuery.event, {
 
 					// Prevent re-triggering of the same event, since we already bubbled it above
 					jQuery.event.triggered = type;
+
+					if ( event.isPropagationStopped() ) {
+						lastElement.addEventListener( type, stopPropagationCallback );
+					}
+
 					elem[ type ]();
+
+					if ( event.isPropagationStopped() ) {
+						lastElement.removeEventListener( type, stopPropagationCallback );
+					}
+
 					jQuery.event.triggered = undefined;
 
 					if ( tmp ) {
@@ -8278,31 +8558,6 @@ jQuery.fn.extend( {
 } );
 
 
-jQuery.each( ( "blur focus focusin focusout resize scroll click dblclick " +
-	"mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
-	"change select submit keydown keypress keyup contextmenu" ).split( " " ),
-	function( i, name ) {
-
-	// Handle event binding
-	jQuery.fn[ name ] = function( data, fn ) {
-		return arguments.length > 0 ?
-			this.on( name, null, data, fn ) :
-			this.trigger( name );
-	};
-} );
-
-jQuery.fn.extend( {
-	hover: function( fnOver, fnOut ) {
-		return this.mouseenter( fnOver ).mouseleave( fnOut || fnOver );
-	}
-} );
-
-
-
-
-support.focusin = "onfocusin" in window;
-
-
 // Support: Firefox <=44
 // Firefox doesn't have focus(in | out) events
 // Related ticket - https://bugzilla.mozilla.org/show_bug.cgi?id=687787
@@ -8346,7 +8601,7 @@ if ( !support.focusin ) {
 }
 var location = window.location;
 
-var nonce = jQuery.now();
+var nonce = Date.now();
 
 var rquery = ( /\?/ );
 
@@ -8404,7 +8659,7 @@ function buildParams( prefix, obj, traditional, add ) {
 			}
 		} );
 
-	} else if ( !traditional && jQuery.type( obj ) === "object" ) {
+	} else if ( !traditional && toType( obj ) === "object" ) {
 
 		// Serialize object item.
 		for ( name in obj ) {
@@ -8426,13 +8681,17 @@ jQuery.param = function( a, traditional ) {
 		add = function( key, valueOrFunction ) {
 
 			// If value is a function, invoke it and use its return value
-			var value = jQuery.isFunction( valueOrFunction ) ?
+			var value = isFunction( valueOrFunction ) ?
 				valueOrFunction() :
 				valueOrFunction;
 
 			s[ s.length ] = encodeURIComponent( key ) + "=" +
 				encodeURIComponent( value == null ? "" : value );
 		};
+
+	if ( a == null ) {
+		return "";
+	}
 
 	// If an array was passed in, assume that it is an array of form elements.
 	if ( Array.isArray( a ) || ( a.jquery && !jQuery.isPlainObject( a ) ) ) {
@@ -8544,7 +8803,7 @@ function addToPrefiltersOrTransports( structure ) {
 			i = 0,
 			dataTypes = dataTypeExpression.toLowerCase().match( rnothtmlwhite ) || [];
 
-		if ( jQuery.isFunction( func ) ) {
+		if ( isFunction( func ) ) {
 
 			// For each dataType in the dataTypeExpression
 			while ( ( dataType = dataTypes[ i++ ] ) ) {
@@ -8936,12 +9195,14 @@ jQuery.extend( {
 						if ( !responseHeaders ) {
 							responseHeaders = {};
 							while ( ( match = rheaders.exec( responseHeadersString ) ) ) {
-								responseHeaders[ match[ 1 ].toLowerCase() ] = match[ 2 ];
+								responseHeaders[ match[ 1 ].toLowerCase() + " " ] =
+									( responseHeaders[ match[ 1 ].toLowerCase() + " " ] || [] )
+										.concat( match[ 2 ] );
 							}
 						}
-						match = responseHeaders[ key.toLowerCase() ];
+						match = responseHeaders[ key.toLowerCase() + " " ];
 					}
-					return match == null ? null : match;
+					return match == null ? null : match.join( ", " );
 				},
 
 				// Raw string
@@ -9016,7 +9277,7 @@ jQuery.extend( {
 		if ( s.crossDomain == null ) {
 			urlAnchor = document.createElement( "a" );
 
-			// Support: IE <=8 - 11, Edge 12 - 13
+			// Support: IE <=8 - 11, Edge 12 - 15
 			// IE throws exception on accessing the href property if url is malformed,
 			// e.g. http://example.com:80x/
 			try {
@@ -9074,8 +9335,8 @@ jQuery.extend( {
 			// Remember the hash so we can put it back
 			uncached = s.url.slice( cacheURL.length );
 
-			// If data is available, append data to url
-			if ( s.data ) {
+			// If data is available and should be processed, append data to url
+			if ( s.data && ( s.processData || typeof s.data === "string" ) ) {
 				cacheURL += ( rquery.test( cacheURL ) ? "&" : "?" ) + s.data;
 
 				// #9682: remove data so that it's not used in an eventual retry
@@ -9312,7 +9573,7 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 	jQuery[ method ] = function( url, data, callback, type ) {
 
 		// Shift arguments if data argument was omitted
-		if ( jQuery.isFunction( data ) ) {
+		if ( isFunction( data ) ) {
 			type = type || callback;
 			callback = data;
 			data = undefined;
@@ -9330,7 +9591,7 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 } );
 
 
-jQuery._evalUrl = function( url ) {
+jQuery._evalUrl = function( url, options ) {
 	return jQuery.ajax( {
 		url: url,
 
@@ -9340,7 +9601,16 @@ jQuery._evalUrl = function( url ) {
 		cache: true,
 		async: false,
 		global: false,
-		"throws": true
+
+		// Only evaluate the response if it is successful (gh-4126)
+		// dataFilter is not invoked for failure responses, so using it instead
+		// of the default converter is kludgy but it works.
+		converters: {
+			"text script": function() {}
+		},
+		dataFilter: function( response ) {
+			jQuery.globalEval( response, options );
+		}
 	} );
 };
 
@@ -9350,7 +9620,7 @@ jQuery.fn.extend( {
 		var wrap;
 
 		if ( this[ 0 ] ) {
-			if ( jQuery.isFunction( html ) ) {
+			if ( isFunction( html ) ) {
 				html = html.call( this[ 0 ] );
 			}
 
@@ -9376,7 +9646,7 @@ jQuery.fn.extend( {
 	},
 
 	wrapInner: function( html ) {
-		if ( jQuery.isFunction( html ) ) {
+		if ( isFunction( html ) ) {
 			return this.each( function( i ) {
 				jQuery( this ).wrapInner( html.call( this, i ) );
 			} );
@@ -9396,10 +9666,10 @@ jQuery.fn.extend( {
 	},
 
 	wrap: function( html ) {
-		var isFunction = jQuery.isFunction( html );
+		var htmlIsFunction = isFunction( html );
 
 		return this.each( function( i ) {
-			jQuery( this ).wrapAll( isFunction ? html.call( this, i ) : html );
+			jQuery( this ).wrapAll( htmlIsFunction ? html.call( this, i ) : html );
 		} );
 	},
 
@@ -9491,7 +9761,8 @@ jQuery.ajaxTransport( function( options ) {
 					return function() {
 						if ( callback ) {
 							callback = errorCallback = xhr.onload =
-								xhr.onerror = xhr.onabort = xhr.onreadystatechange = null;
+								xhr.onerror = xhr.onabort = xhr.ontimeout =
+									xhr.onreadystatechange = null;
 
 							if ( type === "abort" ) {
 								xhr.abort();
@@ -9531,7 +9802,7 @@ jQuery.ajaxTransport( function( options ) {
 
 				// Listen to events
 				xhr.onload = callback();
-				errorCallback = xhr.onerror = callback( "error" );
+				errorCallback = xhr.onerror = xhr.ontimeout = callback( "error" );
 
 				// Support: IE 9 only
 				// Use onreadystatechange to replace onabort
@@ -9622,24 +9893,21 @@ jQuery.ajaxPrefilter( "script", function( s ) {
 // Bind script tag hack transport
 jQuery.ajaxTransport( "script", function( s ) {
 
-	// This transport only deals with cross domain requests
-	if ( s.crossDomain ) {
+	// This transport only deals with cross domain or forced-by-attrs requests
+	if ( s.crossDomain || s.scriptAttrs ) {
 		var script, callback;
 		return {
 			send: function( _, complete ) {
-				script = jQuery( "<script>" ).prop( {
-					charset: s.scriptCharset,
-					src: s.url
-				} ).on(
-					"load error",
-					callback = function( evt ) {
+				script = jQuery( "<script>" )
+					.attr( s.scriptAttrs || {} )
+					.prop( { charset: s.scriptCharset, src: s.url } )
+					.on( "load error", callback = function( evt ) {
 						script.remove();
 						callback = null;
 						if ( evt ) {
 							complete( evt.type === "error" ? 404 : 200, evt.type );
 						}
-					}
-				);
+					} );
 
 				// Use native DOM manipulation to avoid our domManip AJAX trickery
 				document.head.appendChild( script[ 0 ] );
@@ -9685,7 +9953,7 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 	if ( jsonProp || s.dataTypes[ 0 ] === "jsonp" ) {
 
 		// Get callback name, remembering preexisting value associated with it
-		callbackName = s.jsonpCallback = jQuery.isFunction( s.jsonpCallback ) ?
+		callbackName = s.jsonpCallback = isFunction( s.jsonpCallback ) ?
 			s.jsonpCallback() :
 			s.jsonpCallback;
 
@@ -9736,7 +10004,7 @@ jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
 			}
 
 			// Call if it was a function and we have a response
-			if ( responseContainer && jQuery.isFunction( overwritten ) ) {
+			if ( responseContainer && isFunction( overwritten ) ) {
 				overwritten( responseContainer[ 0 ] );
 			}
 
@@ -9828,7 +10096,7 @@ jQuery.fn.load = function( url, params, callback ) {
 	}
 
 	// If it's a function
-	if ( jQuery.isFunction( params ) ) {
+	if ( isFunction( params ) ) {
 
 		// We assume that it's the callback
 		callback = params;
@@ -9936,7 +10204,7 @@ jQuery.offset = {
 			curLeft = parseFloat( curCSSLeft ) || 0;
 		}
 
-		if ( jQuery.isFunction( options ) ) {
+		if ( isFunction( options ) ) {
 
 			// Use jQuery.extend here to allow modification of coordinates argument (gh-1848)
 			options = options.call( elem, i, jQuery.extend( {}, curOffset ) );
@@ -9959,6 +10227,8 @@ jQuery.offset = {
 };
 
 jQuery.fn.extend( {
+
+	// offset() relates an element's border box to the document origin
 	offset: function( options ) {
 
 		// Preserve chaining for setter
@@ -9970,7 +10240,7 @@ jQuery.fn.extend( {
 				} );
 		}
 
-		var doc, docElem, rect, win,
+		var rect, win,
 			elem = this[ 0 ];
 
 		if ( !elem ) {
@@ -9985,50 +10255,52 @@ jQuery.fn.extend( {
 			return { top: 0, left: 0 };
 		}
 
+		// Get document-relative position by adding viewport scroll to viewport-relative gBCR
 		rect = elem.getBoundingClientRect();
-
-		doc = elem.ownerDocument;
-		docElem = doc.documentElement;
-		win = doc.defaultView;
-
+		win = elem.ownerDocument.defaultView;
 		return {
-			top: rect.top + win.pageYOffset - docElem.clientTop,
-			left: rect.left + win.pageXOffset - docElem.clientLeft
+			top: rect.top + win.pageYOffset,
+			left: rect.left + win.pageXOffset
 		};
 	},
 
+	// position() relates an element's margin box to its offset parent's padding box
+	// This corresponds to the behavior of CSS absolute positioning
 	position: function() {
 		if ( !this[ 0 ] ) {
 			return;
 		}
 
-		var offsetParent, offset,
+		var offsetParent, offset, doc,
 			elem = this[ 0 ],
 			parentOffset = { top: 0, left: 0 };
 
-		// Fixed elements are offset from window (parentOffset = {top:0, left: 0},
-		// because it is its only offset parent
+		// position:fixed elements are offset from the viewport, which itself always has zero offset
 		if ( jQuery.css( elem, "position" ) === "fixed" ) {
 
-			// Assume getBoundingClientRect is there when computed position is fixed
+			// Assume position:fixed implies availability of getBoundingClientRect
 			offset = elem.getBoundingClientRect();
 
 		} else {
-
-			// Get *real* offsetParent
-			offsetParent = this.offsetParent();
-
-			// Get correct offsets
 			offset = this.offset();
-			if ( !nodeName( offsetParent[ 0 ], "html" ) ) {
-				parentOffset = offsetParent.offset();
-			}
 
-			// Add offsetParent borders
-			parentOffset = {
-				top: parentOffset.top + jQuery.css( offsetParent[ 0 ], "borderTopWidth", true ),
-				left: parentOffset.left + jQuery.css( offsetParent[ 0 ], "borderLeftWidth", true )
-			};
+			// Account for the *real* offset parent, which can be the document or its root element
+			// when a statically positioned element is identified
+			doc = elem.ownerDocument;
+			offsetParent = elem.offsetParent || doc.documentElement;
+			while ( offsetParent &&
+				( offsetParent === doc.body || offsetParent === doc.documentElement ) &&
+				jQuery.css( offsetParent, "position" ) === "static" ) {
+
+				offsetParent = offsetParent.parentNode;
+			}
+			if ( offsetParent && offsetParent !== elem && offsetParent.nodeType === 1 ) {
+
+				// Incorporate borders into its offset, since they are outside its content origin
+				parentOffset = jQuery( offsetParent ).offset();
+				parentOffset.top += jQuery.css( offsetParent, "borderTopWidth", true );
+				parentOffset.left += jQuery.css( offsetParent, "borderLeftWidth", true );
+			}
 		}
 
 		// Subtract parent offsets and element margins
@@ -10070,7 +10342,7 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 
 			// Coalesce documents and windows
 			var win;
-			if ( jQuery.isWindow( elem ) ) {
+			if ( isWindow( elem ) ) {
 				win = elem;
 			} else if ( elem.nodeType === 9 ) {
 				win = elem.defaultView;
@@ -10128,7 +10400,7 @@ jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 			return access( this, function( elem, type, value ) {
 				var doc;
 
-				if ( jQuery.isWindow( elem ) ) {
+				if ( isWindow( elem ) ) {
 
 					// $( window ).outerWidth/Height return w/h including scrollbars (gh-1729)
 					return funcName.indexOf( "outer" ) === 0 ?
@@ -10162,6 +10434,28 @@ jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 } );
 
 
+jQuery.each( ( "blur focus focusin focusout resize scroll click dblclick " +
+	"mousedown mouseup mousemove mouseover mouseout mouseenter mouseleave " +
+	"change select submit keydown keypress keyup contextmenu" ).split( " " ),
+	function( i, name ) {
+
+	// Handle event binding
+	jQuery.fn[ name ] = function( data, fn ) {
+		return arguments.length > 0 ?
+			this.on( name, null, data, fn ) :
+			this.trigger( name );
+	};
+} );
+
+jQuery.fn.extend( {
+	hover: function( fnOver, fnOut ) {
+		return this.mouseenter( fnOver ).mouseleave( fnOut || fnOver );
+	}
+} );
+
+
+
+
 jQuery.fn.extend( {
 
 	bind: function( types, data, fn ) {
@@ -10183,6 +10477,37 @@ jQuery.fn.extend( {
 	}
 } );
 
+// Bind a function to a context, optionally partially applying any
+// arguments.
+// jQuery.proxy is deprecated to promote standards (specifically Function#bind)
+// However, it is not slated for removal any time soon
+jQuery.proxy = function( fn, context ) {
+	var tmp, args, proxy;
+
+	if ( typeof context === "string" ) {
+		tmp = fn[ context ];
+		context = fn;
+		fn = tmp;
+	}
+
+	// Quick check to determine if target is callable, in the spec
+	// this throws a TypeError, but we will just return undefined.
+	if ( !isFunction( fn ) ) {
+		return undefined;
+	}
+
+	// Simulated bind
+	args = slice.call( arguments, 2 );
+	proxy = function() {
+		return fn.apply( context || this, args.concat( slice.call( arguments ) ) );
+	};
+
+	// Set the guid of unique handler to the same of original handler, so it can be removed
+	proxy.guid = fn.guid = fn.guid || jQuery.guid++;
+
+	return proxy;
+};
+
 jQuery.holdReady = function( hold ) {
 	if ( hold ) {
 		jQuery.readyWait++;
@@ -10193,6 +10518,26 @@ jQuery.holdReady = function( hold ) {
 jQuery.isArray = Array.isArray;
 jQuery.parseJSON = JSON.parse;
 jQuery.nodeName = nodeName;
+jQuery.isFunction = isFunction;
+jQuery.isWindow = isWindow;
+jQuery.camelCase = camelCase;
+jQuery.type = toType;
+
+jQuery.now = Date.now;
+
+jQuery.isNumeric = function( obj ) {
+
+	// As of jQuery 3.0, isNumeric is limited to
+	// strings and numbers (primitives or objects)
+	// that can be coerced to finite numbers (gh-2662)
+	var type = jQuery.type( obj );
+	return ( type === "number" || type === "string" ) &&
+
+		// parseFloat NaNs numeric-cast false positives ("")
+		// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
+		// subtraction forces infinities to NaN
+		!isNaN( obj - parseFloat( obj ) );
+};
 
 
 
@@ -10325,16 +10670,17 @@ return jQuery;
 }(jQuery, this, document));
 ;
 /* @preserve
- * Leaflet 1.2.0, a JS library for interactive maps. http://leafletjs.com
- * (c) 2010-2017 Vladimir Agafonkin, (c) 2010-2011 CloudMade
+ * Leaflet 1.6.0, a JS library for interactive maps. http://leafletjs.com
+ * (c) 2010-2019 Vladimir Agafonkin, (c) 2010-2011 CloudMade
  */
+
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
 	typeof define === 'function' && define.amd ? define(['exports'], factory) :
 	(factory((global.L = {})));
 }(this, (function (exports) { 'use strict';
 
-var version = "1.2.0";
+var version = "1.6.0";
 
 /*
  * @namespace Util
@@ -10391,12 +10737,12 @@ function bind(fn, obj) {
 var lastId = 0;
 
 // @function stamp(obj: Object): Number
-// Returns the unique ID of an object, assiging it one if it doesn't have it.
+// Returns the unique ID of an object, assigning it one if it doesn't have it.
 function stamp(obj) {
 	/*eslint-disable */
 	obj._leaflet_id = obj._leaflet_id || ++lastId;
 	return obj._leaflet_id;
-	/*eslint-enable */
+	/* eslint-enable */
 }
 
 // @function throttle(fn: Function, time: Number, context: Object): Function
@@ -10450,9 +10796,9 @@ function wrapNum(x, range, includeMax) {
 function falseFn() { return false; }
 
 // @function formatNum(num: Number, digits?: Number): Number
-// Returns the number `num` rounded to `digits` decimals, or to 5 decimals by default.
+// Returns the number `num` rounded to `digits` decimals, or to 6 decimals by default.
 function formatNum(num, digits) {
-	var pow = Math.pow(10, digits || 5);
+	var pow = Math.pow(10, (digits === undefined ? 6 : digits));
 	return Math.round(num * pow) / pow;
 }
 
@@ -10493,7 +10839,7 @@ function getParamString(obj, existingUrl, uppercase) {
 	return ((!existingUrl || existingUrl.indexOf('?') === -1) ? '?' : '&') + params.join('&');
 }
 
-var templateRe = /\{ *([\w_\-]+) *\}/g;
+var templateRe = /\{ *([\w_-]+) *\}/g;
 
 // @function template(str: String, data: Object): String
 // Simple templating facility, accepts a template string of the form `'Hello {a}, {b}'`
@@ -10716,7 +11062,7 @@ Class.addInitHook = function (fn) { // (Function) || (String, args...)
 };
 
 function checkDeprecatedMixinEvents(includes) {
-	if (!L || !L.Mixin) { return; }
+	if (typeof L === 'undefined' || !L || !L.Mixin) { return; }
 
 	includes = isArray(includes) ? includes : [includes];
 
@@ -10793,7 +11139,7 @@ var Events = {
 	 *
 	 * @alternative
 	 * @method off: this
-	 * Removes all listeners to all events on the object.
+	 * Removes all listeners to all events on the object. This includes implicitly attached events.
 	 */
 	off: function (types, fn, context) {
 
@@ -10902,7 +11248,11 @@ var Events = {
 	fire: function (type, data, propagate) {
 		if (!this.listens(type, propagate)) { return this; }
 
-		var event = extend({}, data, {type: type, target: this});
+		var event = extend({}, data, {
+			type: type,
+			target: this,
+			sourceTarget: data && data.sourceTarget || this
+		});
 
 		if (this._events) {
 			var listeners = this._events[type];
@@ -10983,7 +11333,10 @@ var Events = {
 
 	_propagateEvent: function (e) {
 		for (var id in this._eventParents) {
-			this._eventParents[id].fire(e.type, extend({layer: e.target}, e), true);
+			this._eventParents[id].fire(e.type, extend({
+				layer: e.target,
+				propagatedFrom: e.target
+			}, e), true);
 		}
 	}
 };
@@ -11033,6 +11386,10 @@ var Evented = Class.extend(Events);
  * map.panBy([200, 300]);
  * map.panBy(L.point(200, 300));
  * ```
+ *
+ * Note that `Point` does not inherit from Leafet's `Class` object,
+ * which means new classes can't inherit from it, and new methods
+ * can't be added to it with the `include` function.
  */
 
 function Point(x, y, round) {
@@ -11041,6 +11398,10 @@ function Point(x, y, round) {
 	// @property y: Number; The `y` coordinate of the point
 	this.y = (round ? Math.round(y) : y);
 }
+
+var trunc = Math.trunc || function (v) {
+	return v > 0 ? Math.floor(v) : Math.ceil(v);
+};
 
 Point.prototype = {
 
@@ -11152,6 +11513,18 @@ Point.prototype = {
 		return this;
 	},
 
+	// @method trunc(): Point
+	// Returns a copy of the current point with truncated coordinates (rounded towards zero).
+	trunc: function () {
+		return this.clone()._trunc();
+	},
+
+	_trunc: function () {
+		this.x = trunc(this.x);
+		this.y = trunc(this.y);
+		return this;
+	},
+
 	// @method distanceTo(otherPoint: Point): Number
 	// Returns the cartesian distance between the current and the given points.
 	distanceTo: function (point) {
@@ -11235,6 +11608,10 @@ function toPoint(x, y, round) {
  * ```js
  * otherBounds.intersects([[10, 10], [40, 60]]);
  * ```
+ *
+ * Note that `Bounds` does not inherit from Leafet's `Class` object,
+ * which means new classes can't inherit from it, and new methods
+ * can't be added to it with the `include` function.
  */
 
 function Bounds(a, b) {
@@ -11408,6 +11785,10 @@ function toBounds(a, b) {
  * ```
  *
  * Caution: if the area crosses the antimeridian (often confused with the International Date Line), you must specify corners _outside_ the [-180, 180] degrees longitude range.
+ *
+ * Note that `LatLngBounds` does not inherit from Leafet's `Class` object,
+ * which means new classes can't inherit from it, and new methods
+ * can't be added to it with the `include` function.
  */
 
 function LatLngBounds(corner1, corner2) { // (LatLng, LatLng) or (LatLng[])
@@ -11461,7 +11842,9 @@ LatLngBounds.prototype = {
 	},
 
 	// @method pad(bufferRatio: Number): LatLngBounds
-	// Returns bigger bounds created by extending the current bounds by a given percentage in each direction.
+	// Returns bounds created by extending or retracting the current bounds by a given ratio in each direction.
+	// For example, a ratio of 0.5 extends the bounds by 50% in each direction.
+	// Negative values will retract the bounds.
 	pad: function (bufferRatio) {
 		var sw = this._southWest,
 		    ne = this._northEast,
@@ -11596,7 +11979,7 @@ LatLngBounds.prototype = {
 	},
 
 	// @method equals(otherBounds: LatLngBounds, maxMargin?: Number): Boolean
-	// Returns `true` if the rectangle is equivalent (within a small margin of error) to the given bounds. The margin of error can be overriden by setting `maxMargin` to a small number.
+	// Returns `true` if the rectangle is equivalent (within a small margin of error) to the given bounds. The margin of error can be overridden by setting `maxMargin` to a small number.
 	equals: function (bounds, maxMargin) {
 		if (!bounds) { return false; }
 
@@ -11647,6 +12030,10 @@ function toLatLngBounds(a, b) {
  * map.panTo({lat: 50, lng: 30});
  * map.panTo(L.latLng(50, 30));
  * ```
+ *
+ * Note that `LatLng` does not inherit from Leaflet's `Class` object,
+ * which means new classes can't inherit from it, and new methods
+ * can't be added to it with the `include` function.
  */
 
 function LatLng(lat, lng, alt) {
@@ -11671,7 +12058,7 @@ function LatLng(lat, lng, alt) {
 
 LatLng.prototype = {
 	// @method equals(otherLatLng: LatLng, maxMargin?: Number): Boolean
-	// Returns `true` if the given `LatLng` point is at the same position (within a small margin of error). The margin of error can be overriden by setting `maxMargin` to a small number.
+	// Returns `true` if the given `LatLng` point is at the same position (within a small margin of error). The margin of error can be overridden by setting `maxMargin` to a small number.
 	equals: function (obj, maxMargin) {
 		if (!obj) { return false; }
 
@@ -11693,7 +12080,7 @@ LatLng.prototype = {
 	},
 
 	// @method distanceTo(otherLatLng: LatLng): Number
-	// Returns the distance (in meters) to the given `LatLng` calculated using the [Haversine formula](http://en.wikipedia.org/wiki/Haversine_formula).
+	// Returns the distance (in meters) to the given `LatLng` calculated using the [Spherical Law of Cosines](https://en.wikipedia.org/wiki/Spherical_law_of_cosines).
 	distanceTo: function (other) {
 		return Earth.distance(this, toLatLng(other));
 	},
@@ -11769,6 +12156,10 @@ function toLatLng(a, b, c) {
  * Leaflet defines the most usual CRSs by default. If you want to use a
  * CRS not defined by default, take a look at the
  * [Proj4Leaflet](https://github.com/kartena/Proj4Leaflet) plugin.
+ *
+ * Note that the CRS instances do not inherit from Leafet's `Class` object,
+ * and can't be instantiated. Also, new classes can't inherit from them,
+ * and methods can't be added to them with the `include` function.
  */
 
 var CRS = {
@@ -11911,10 +12302,11 @@ var Earth = extend({}, CRS, {
 		var rad = Math.PI / 180,
 		    lat1 = latlng1.lat * rad,
 		    lat2 = latlng2.lat * rad,
-		    a = Math.sin(lat1) * Math.sin(lat2) +
-		        Math.cos(lat1) * Math.cos(lat2) * Math.cos((latlng2.lng - latlng1.lng) * rad);
-
-		return this.R * Math.acos(Math.min(a, 1));
+		    sinDLat = Math.sin((latlng2.lat - latlng1.lat) * rad / 2),
+		    sinDLon = Math.sin((latlng2.lng - latlng1.lng) * rad / 2),
+		    a = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon,
+		    c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		return this.R * c;
 	}
 });
 
@@ -11927,9 +12319,11 @@ var Earth = extend({}, CRS, {
  * a sphere. Used by the `EPSG:3857` CRS.
  */
 
+var earthRadius = 6378137;
+
 var SphericalMercator = {
 
-	R: 6378137,
+	R: earthRadius,
 	MAX_LATITUDE: 85.0511287798,
 
 	project: function (latlng) {
@@ -11939,8 +12333,8 @@ var SphericalMercator = {
 		    sin = Math.sin(lat * d);
 
 		return new Point(
-				this.R * latlng.lng * d,
-				this.R * Math.log((1 + sin) / (1 - sin)) / 2);
+			this.R * latlng.lng * d,
+			this.R * Math.log((1 + sin) / (1 - sin)) / 2);
 	},
 
 	unproject: function (point) {
@@ -11952,7 +12346,7 @@ var SphericalMercator = {
 	},
 
 	bounds: (function () {
-		var d = 6378137 * Math.PI;
+		var d = earthRadius * Math.PI;
 		return new Bounds([-d, -d], [d, d]);
 	})()
 };
@@ -12027,7 +12421,7 @@ Transformation.prototype = {
 
 // @alternative
 // @factory L.transformation(coefficients: Array): Transformation
-// Expects an coeficients array of the form
+// Expects an coefficients array of the form
 // `[a: Number, b: Number, c: Number, d: Number]`.
 
 function toTransformation(a, b, c, d) {
@@ -12128,6 +12522,11 @@ var android = userAgentContains('android');
 // @property android23: Boolean; `true` for browsers running on Android 2 or Android 3.
 var android23 = userAgentContains('android 2') || userAgentContains('android 3');
 
+/* See https://stackoverflow.com/a/17961266 for details on detecting stock Android */
+var webkitVer = parseInt(/WebKit\/([0-9]+)|$/.exec(navigator.userAgent)[1], 10); // also matches AppleWebKit
+// @property androidStock: Boolean; `true` for the Android stock browser (i.e. not Chrome)
+var androidStock = android && userAgentContains('Google') && webkitVer < 537 && !('AudioNode' in window);
+
 // @property opera: Boolean; `true` for the Opera browser
 var opera = !!window.opera;
 
@@ -12178,7 +12577,7 @@ var msPointer = !window.PointerEvent && window.MSPointerEvent;
 
 // @property pointer: Boolean
 // `true` for all browsers supporting [pointer events](https://msdn.microsoft.com/en-us/library/dn433244%28v=vs.85%29.aspx).
-var pointer = !!(window.PointerEvent || msPointer);
+var pointer = !webkit && !!(window.PointerEvent || msPointer);
 
 // @property touch: Boolean
 // `true` for all browsers supporting [touch events](https://developer.mozilla.org/docs/Web/API/Touch_events).
@@ -12196,9 +12595,26 @@ var mobileOpera = mobile && opera;
 var mobileGecko = mobile && gecko;
 
 // @property retina: Boolean
-// `true` for browsers on a high-resolution "retina" screen.
+// `true` for browsers on a high-resolution "retina" screen or on any screen when browser's display zoom is more than 100%.
 var retina = (window.devicePixelRatio || (window.screen.deviceXDPI / window.screen.logicalXDPI)) > 1;
 
+// @property passiveEvents: Boolean
+// `true` for browsers that support passive events.
+var passiveEvents = (function () {
+	var supportsPassiveOption = false;
+	try {
+		var opts = Object.defineProperty({}, 'passive', {
+			get: function () {
+				supportsPassiveOption = true;
+			}
+		});
+		window.addEventListener('testPassiveEventSupport', falseFn, opts);
+		window.removeEventListener('testPassiveEventSupport', falseFn, opts);
+	} catch (e) {
+		// Errors can safely be ignored since this is only a browser support test.
+	}
+	return supportsPassiveOption;
+});
 
 // @property canvas: Boolean
 // `true` when the browser supports [`<canvas>`](https://developer.mozilla.org/docs/Web/API/Canvas_API).
@@ -12240,6 +12656,7 @@ var Browser = (Object.freeze || Object)({
 	webkit: webkit,
 	android: android,
 	android23: android23,
+	androidStock: androidStock,
 	opera: opera,
 	chrome: chrome,
 	gecko: gecko,
@@ -12260,6 +12677,7 @@ var Browser = (Object.freeze || Object)({
 	mobileOpera: mobileOpera,
 	mobileGecko: mobileGecko,
 	retina: retina,
+	passiveEvents: passiveEvents,
 	canvas: canvas,
 	svg: svg,
 	vml: vml
@@ -12275,6 +12693,7 @@ var POINTER_MOVE =   msPointer ? 'MSPointerMove'   : 'pointermove';
 var POINTER_UP =     msPointer ? 'MSPointerUp'     : 'pointerup';
 var POINTER_CANCEL = msPointer ? 'MSPointerCancel' : 'pointercancel';
 var TAG_WHITE_LIST = ['INPUT', 'SELECT', 'OPTION'];
+
 var _pointers = {};
 var _pointerDocListener = false;
 
@@ -12317,7 +12736,7 @@ function removePointerListener(obj, type, id) {
 
 function _addPointerStart(obj, handler, id) {
 	var onDown = bind(function (e) {
-		if (e.pointerType !== 'mouse' && e.pointerType !== e.MSPOINTER_TYPE_MOUSE && e.pointerType !== e.MSPOINTER_TYPE_MOUSE) {
+		if (e.pointerType !== 'mouse' && e.MSPOINTER_TYPE_MOUSE && e.pointerType !== e.MSPOINTER_TYPE_MOUSE) {
 			// In IE11, some touch events needs to fire for form controls, or
 			// the controls will stop working. We keep a whitelist of tag names that
 			// need these events. For other target tags, we prevent default on the event.
@@ -12443,6 +12862,7 @@ function addDoubleTapListener(obj, handler, id) {
 				touch$$1 = newTouch;
 			}
 			touch$$1.type = 'dblclick';
+			touch$$1.button = 0;
 			handler(touch$$1);
 			last = null;
 		}
@@ -12452,8 +12872,8 @@ function addDoubleTapListener(obj, handler, id) {
 	obj[_pre + _touchend + id] = onTouchEnd;
 	obj[_pre + 'dblclick' + id] = handler;
 
-	obj.addEventListener(_touchstart, onTouchStart, false);
-	obj.addEventListener(_touchend, onTouchEnd, false);
+	obj.addEventListener(_touchstart, onTouchStart, passiveEvents ? {passive: false} : false);
+	obj.addEventListener(_touchend, onTouchEnd, passiveEvents ? {passive: false} : false);
 
 	// On some platforms (notably, chrome<55 on win10 + touchscreen + mouse),
 	// the browser doesn't fire touchend/pointerup events but does fire
@@ -12469,336 +12889,14 @@ function removeDoubleTapListener(obj, id) {
 	    touchend = obj[_pre + _touchend + id],
 	    dblclick = obj[_pre + 'dblclick' + id];
 
-	obj.removeEventListener(_touchstart, touchstart, false);
-	obj.removeEventListener(_touchend, touchend, false);
+	obj.removeEventListener(_touchstart, touchstart, passiveEvents ? {passive: false} : false);
+	obj.removeEventListener(_touchend, touchend, passiveEvents ? {passive: false} : false);
 	if (!edge) {
 		obj.removeEventListener('dblclick', dblclick, false);
 	}
 
 	return this;
 }
-
-/*
- * @namespace DomEvent
- * Utility functions to work with the [DOM events](https://developer.mozilla.org/docs/Web/API/Event), used by Leaflet internally.
- */
-
-// Inspired by John Resig, Dean Edwards and YUI addEvent implementations.
-
-// @function on(el: HTMLElement, types: String, fn: Function, context?: Object): this
-// Adds a listener function (`fn`) to a particular DOM event type of the
-// element `el`. You can optionally specify the context of the listener
-// (object the `this` keyword will point to). You can also pass several
-// space-separated types (e.g. `'click dblclick'`).
-
-// @alternative
-// @function on(el: HTMLElement, eventMap: Object, context?: Object): this
-// Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
-function on(obj, types, fn, context) {
-
-	if (typeof types === 'object') {
-		for (var type in types) {
-			addOne(obj, type, types[type], fn);
-		}
-	} else {
-		types = splitWords(types);
-
-		for (var i = 0, len = types.length; i < len; i++) {
-			addOne(obj, types[i], fn, context);
-		}
-	}
-
-	return this;
-}
-
-var eventsKey = '_leaflet_events';
-
-// @function off(el: HTMLElement, types: String, fn: Function, context?: Object): this
-// Removes a previously added listener function. If no function is specified,
-// it will remove all the listeners of that particular DOM event from the element.
-// Note that if you passed a custom context to on, you must pass the same
-// context to `off` in order to remove the listener.
-
-// @alternative
-// @function off(el: HTMLElement, eventMap: Object, context?: Object): this
-// Removes a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
-
-// @alternative
-// @function off(el: HTMLElement): this
-// Removes all known event listeners
-function off(obj, types, fn, context) {
-
-	if (typeof types === 'object') {
-		for (var type in types) {
-			removeOne(obj, type, types[type], fn);
-		}
-	} else if (types) {
-		types = splitWords(types);
-
-		for (var i = 0, len = types.length; i < len; i++) {
-			removeOne(obj, types[i], fn, context);
-		}
-	} else {
-		for (var j in obj[eventsKey]) {
-			removeOne(obj, j, obj[eventsKey][j]);
-		}
-		delete obj[eventsKey];
-	}
-
-	return this;
-}
-
-function addOne(obj, type, fn, context) {
-	var id = type + stamp(fn) + (context ? '_' + stamp(context) : '');
-
-	if (obj[eventsKey] && obj[eventsKey][id]) { return this; }
-
-	var handler = function (e) {
-		return fn.call(context || obj, e || window.event);
-	};
-
-	var originalHandler = handler;
-
-	if (pointer && type.indexOf('touch') === 0) {
-		// Needs DomEvent.Pointer.js
-		addPointerListener(obj, type, handler, id);
-
-	} else if (touch && (type === 'dblclick') && addDoubleTapListener &&
-	           !(pointer && chrome)) {
-		// Chrome >55 does not need the synthetic dblclicks from addDoubleTapListener
-		// See #5180
-		addDoubleTapListener(obj, handler, id);
-
-	} else if ('addEventListener' in obj) {
-
-		if (type === 'mousewheel') {
-			obj.addEventListener('onwheel' in obj ? 'wheel' : 'mousewheel', handler, false);
-
-		} else if ((type === 'mouseenter') || (type === 'mouseleave')) {
-			handler = function (e) {
-				e = e || window.event;
-				if (isExternalTarget(obj, e)) {
-					originalHandler(e);
-				}
-			};
-			obj.addEventListener(type === 'mouseenter' ? 'mouseover' : 'mouseout', handler, false);
-
-		} else {
-			if (type === 'click' && android) {
-				handler = function (e) {
-					filterClick(e, originalHandler);
-				};
-			}
-			obj.addEventListener(type, handler, false);
-		}
-
-	} else if ('attachEvent' in obj) {
-		obj.attachEvent('on' + type, handler);
-	}
-
-	obj[eventsKey] = obj[eventsKey] || {};
-	obj[eventsKey][id] = handler;
-}
-
-function removeOne(obj, type, fn, context) {
-
-	var id = type + stamp(fn) + (context ? '_' + stamp(context) : ''),
-	    handler = obj[eventsKey] && obj[eventsKey][id];
-
-	if (!handler) { return this; }
-
-	if (pointer && type.indexOf('touch') === 0) {
-		removePointerListener(obj, type, id);
-
-	} else if (touch && (type === 'dblclick') && removeDoubleTapListener) {
-		removeDoubleTapListener(obj, id);
-
-	} else if ('removeEventListener' in obj) {
-
-		if (type === 'mousewheel') {
-			obj.removeEventListener('onwheel' in obj ? 'wheel' : 'mousewheel', handler, false);
-
-		} else {
-			obj.removeEventListener(
-				type === 'mouseenter' ? 'mouseover' :
-				type === 'mouseleave' ? 'mouseout' : type, handler, false);
-		}
-
-	} else if ('detachEvent' in obj) {
-		obj.detachEvent('on' + type, handler);
-	}
-
-	obj[eventsKey][id] = null;
-}
-
-// @function stopPropagation(ev: DOMEvent): this
-// Stop the given event from propagation to parent elements. Used inside the listener functions:
-// ```js
-// L.DomEvent.on(div, 'click', function (ev) {
-// 	L.DomEvent.stopPropagation(ev);
-// });
-// ```
-function stopPropagation(e) {
-
-	if (e.stopPropagation) {
-		e.stopPropagation();
-	} else if (e.originalEvent) {  // In case of Leaflet event.
-		e.originalEvent._stopped = true;
-	} else {
-		e.cancelBubble = true;
-	}
-	skipped(e);
-
-	return this;
-}
-
-// @function disableScrollPropagation(el: HTMLElement): this
-// Adds `stopPropagation` to the element's `'mousewheel'` events (plus browser variants).
-function disableScrollPropagation(el) {
-	addOne(el, 'mousewheel', stopPropagation);
-	return this;
-}
-
-// @function disableClickPropagation(el: HTMLElement): this
-// Adds `stopPropagation` to the element's `'click'`, `'doubleclick'`,
-// `'mousedown'` and `'touchstart'` events (plus browser variants).
-function disableClickPropagation(el) {
-	on(el, 'mousedown touchstart dblclick', stopPropagation);
-	addOne(el, 'click', fakeStop);
-	return this;
-}
-
-// @function preventDefault(ev: DOMEvent): this
-// Prevents the default action of the DOM Event `ev` from happening (such as
-// following a link in the href of the a element, or doing a POST request
-// with page reload when a `<form>` is submitted).
-// Use it inside listener functions.
-function preventDefault(e) {
-	if (e.preventDefault) {
-		e.preventDefault();
-	} else {
-		e.returnValue = false;
-	}
-	return this;
-}
-
-// @function stop(ev): this
-// Does `stopPropagation` and `preventDefault` at the same time.
-function stop(e) {
-	preventDefault(e);
-	stopPropagation(e);
-	return this;
-}
-
-// @function getMousePosition(ev: DOMEvent, container?: HTMLElement): Point
-// Gets normalized mouse position from a DOM event relative to the
-// `container` or to the whole page if not specified.
-function getMousePosition(e, container) {
-	if (!container) {
-		return new Point(e.clientX, e.clientY);
-	}
-
-	var rect = container.getBoundingClientRect();
-
-	return new Point(
-		e.clientX - rect.left - container.clientLeft,
-		e.clientY - rect.top - container.clientTop);
-}
-
-// Chrome on Win scrolls double the pixels as in other platforms (see #4538),
-// and Firefox scrolls device pixels, not CSS pixels
-var wheelPxFactor =
-	(win && chrome) ? 2 * window.devicePixelRatio :
-	gecko ? window.devicePixelRatio : 1;
-
-// @function getWheelDelta(ev: DOMEvent): Number
-// Gets normalized wheel delta from a mousewheel DOM event, in vertical
-// pixels scrolled (negative if scrolling down).
-// Events from pointing devices without precise scrolling are mapped to
-// a best guess of 60 pixels.
-function getWheelDelta(e) {
-	return (edge) ? e.wheelDeltaY / 2 : // Don't trust window-geometry-based delta
-	       (e.deltaY && e.deltaMode === 0) ? -e.deltaY / wheelPxFactor : // Pixels
-	       (e.deltaY && e.deltaMode === 1) ? -e.deltaY * 20 : // Lines
-	       (e.deltaY && e.deltaMode === 2) ? -e.deltaY * 60 : // Pages
-	       (e.deltaX || e.deltaZ) ? 0 :	// Skip horizontal/depth wheel events
-	       e.wheelDelta ? (e.wheelDeltaY || e.wheelDelta) / 2 : // Legacy IE pixels
-	       (e.detail && Math.abs(e.detail) < 32765) ? -e.detail * 20 : // Legacy Moz lines
-	       e.detail ? e.detail / -32765 * 60 : // Legacy Moz pages
-	       0;
-}
-
-var skipEvents = {};
-
-function fakeStop(e) {
-	// fakes stopPropagation by setting a special event flag, checked/reset with skipped(e)
-	skipEvents[e.type] = true;
-}
-
-function skipped(e) {
-	var events = skipEvents[e.type];
-	// reset when checking, as it's only used in map container and propagates outside of the map
-	skipEvents[e.type] = false;
-	return events;
-}
-
-// check if element really left/entered the event target (for mouseenter/mouseleave)
-function isExternalTarget(el, e) {
-
-	var related = e.relatedTarget;
-
-	if (!related) { return true; }
-
-	try {
-		while (related && (related !== el)) {
-			related = related.parentNode;
-		}
-	} catch (err) {
-		return false;
-	}
-	return (related !== el);
-}
-
-var lastClick;
-
-// this is a horrible workaround for a bug in Android where a single touch triggers two click events
-function filterClick(e, handler) {
-	var timeStamp = (e.timeStamp || (e.originalEvent && e.originalEvent.timeStamp)),
-	    elapsed = lastClick && (timeStamp - lastClick);
-
-	// are they closer together than 500ms yet more than 100ms?
-	// Android typically triggers them ~300ms apart while multiple listeners
-	// on the same event should be triggered far faster;
-	// or check if click is simulated on the element, and if it is, reject any non-simulated events
-
-	if ((elapsed && elapsed > 100 && elapsed < 500) || (e.target._simulatedClick && !e._simulated)) {
-		stop(e);
-		return;
-	}
-	lastClick = timeStamp;
-
-	handler(e);
-}
-
-
-
-
-var DomEvent = (Object.freeze || Object)({
-	on: on,
-	off: off,
-	stopPropagation: stopPropagation,
-	disableScrollPropagation: disableScrollPropagation,
-	disableClickPropagation: disableClickPropagation,
-	preventDefault: preventDefault,
-	stop: stop,
-	getMousePosition: getMousePosition,
-	getWheelDelta: getWheelDelta,
-	fakeStop: fakeStop,
-	skipped: skipped,
-	isExternalTarget: isExternalTarget,
-	addListener: on,
-	removeListener: off
-});
 
 /*
  * @namespace DomUtil
@@ -12815,7 +12913,7 @@ var DomEvent = (Object.freeze || Object)({
 // @property TRANSFORM: String
 // Vendor-prefixed transform style name (e.g. `'webkitTransform'` for WebKit).
 var TRANSFORM = testProp(
-	['transform', 'WebkitTransform', 'OTransform', 'MozTransform', 'msTransform']);
+	['transform', 'webkitTransform', 'OTransform', 'MozTransform', 'msTransform']);
 
 // webkitTransition comes first because some browser versions that drop vendor prefix don't do
 // the same for the transitionend event, in particular the Android 4.1 stock browser
@@ -12884,7 +12982,7 @@ function empty(el) {
 // Makes `el` the last child of its parent, so it renders in front of the other children.
 function toFront(el) {
 	var parent = el.parentNode;
-	if (parent.lastChild !== el) {
+	if (parent && parent.lastChild !== el) {
 		parent.appendChild(el);
 	}
 }
@@ -12893,7 +12991,7 @@ function toFront(el) {
 // Makes `el` the first child of its parent, so it renders behind the other children.
 function toBack(el) {
 	var parent = el.parentNode;
-	if (parent.firstChild !== el) {
+	if (parent && parent.firstChild !== el) {
 		parent.insertBefore(el, parent.firstChild);
 	}
 }
@@ -12946,6 +13044,11 @@ function setClass(el, name) {
 // @function getClass(el: HTMLElement): String
 // Returns the element's class.
 function getClass(el) {
+	// Check if the element is an SVGElementInstance and use the correspondingElement instead
+	// (Required for linked SVG elements in IE11.)
+	if (el.correspondingElement) {
+		el = el.correspondingElement;
+	}
 	return el.className.baseVal === undefined ? el.className : el.className.baseVal;
 }
 
@@ -13020,7 +13123,7 @@ function setPosition(el, point) {
 
 	/*eslint-disable */
 	el._leaflet_pos = point;
-	/*eslint-enable */
+	/* eslint-enable */
 
 	if (any3d) {
 		setTransform(el, point);
@@ -13118,6 +13221,29 @@ function restoreOutline() {
 	off(window, 'keydown', restoreOutline);
 }
 
+// @function getSizedParentNode(el: HTMLElement): HTMLElement
+// Finds the closest parent node which size (width and height) is not null.
+function getSizedParentNode(element) {
+	do {
+		element = element.parentNode;
+	} while ((!element.offsetWidth || !element.offsetHeight) && element !== document.body);
+	return element;
+}
+
+// @function getScale(el: HTMLElement): Object
+// Computes the CSS scale currently applied on the element.
+// Returns an object with `x` and `y` members as horizontal and vertical scales respectively,
+// and `boundingClientRect` as the result of [`getBoundingClientRect()`](https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect).
+function getScale(element) {
+	var rect = element.getBoundingClientRect(); // Read-only in old browsers.
+
+	return {
+		x: rect.width / element.offsetWidth || 1,
+		y: rect.height / element.offsetHeight || 1,
+		boundingClientRect: rect
+	};
+}
+
 
 var DomUtil = (Object.freeze || Object)({
 	TRANSFORM: TRANSFORM,
@@ -13145,7 +13271,331 @@ var DomUtil = (Object.freeze || Object)({
 	disableImageDrag: disableImageDrag,
 	enableImageDrag: enableImageDrag,
 	preventOutline: preventOutline,
-	restoreOutline: restoreOutline
+	restoreOutline: restoreOutline,
+	getSizedParentNode: getSizedParentNode,
+	getScale: getScale
+});
+
+/*
+ * @namespace DomEvent
+ * Utility functions to work with the [DOM events](https://developer.mozilla.org/docs/Web/API/Event), used by Leaflet internally.
+ */
+
+// Inspired by John Resig, Dean Edwards and YUI addEvent implementations.
+
+// @function on(el: HTMLElement, types: String, fn: Function, context?: Object): this
+// Adds a listener function (`fn`) to a particular DOM event type of the
+// element `el`. You can optionally specify the context of the listener
+// (object the `this` keyword will point to). You can also pass several
+// space-separated types (e.g. `'click dblclick'`).
+
+// @alternative
+// @function on(el: HTMLElement, eventMap: Object, context?: Object): this
+// Adds a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
+function on(obj, types, fn, context) {
+
+	if (typeof types === 'object') {
+		for (var type in types) {
+			addOne(obj, type, types[type], fn);
+		}
+	} else {
+		types = splitWords(types);
+
+		for (var i = 0, len = types.length; i < len; i++) {
+			addOne(obj, types[i], fn, context);
+		}
+	}
+
+	return this;
+}
+
+var eventsKey = '_leaflet_events';
+
+// @function off(el: HTMLElement, types: String, fn: Function, context?: Object): this
+// Removes a previously added listener function.
+// Note that if you passed a custom context to on, you must pass the same
+// context to `off` in order to remove the listener.
+
+// @alternative
+// @function off(el: HTMLElement, eventMap: Object, context?: Object): this
+// Removes a set of type/listener pairs, e.g. `{click: onClick, mousemove: onMouseMove}`
+function off(obj, types, fn, context) {
+
+	if (typeof types === 'object') {
+		for (var type in types) {
+			removeOne(obj, type, types[type], fn);
+		}
+	} else if (types) {
+		types = splitWords(types);
+
+		for (var i = 0, len = types.length; i < len; i++) {
+			removeOne(obj, types[i], fn, context);
+		}
+	} else {
+		for (var j in obj[eventsKey]) {
+			removeOne(obj, j, obj[eventsKey][j]);
+		}
+		delete obj[eventsKey];
+	}
+
+	return this;
+}
+
+function addOne(obj, type, fn, context) {
+	var id = type + stamp(fn) + (context ? '_' + stamp(context) : '');
+
+	if (obj[eventsKey] && obj[eventsKey][id]) { return this; }
+
+	var handler = function (e) {
+		return fn.call(context || obj, e || window.event);
+	};
+
+	var originalHandler = handler;
+
+	if (pointer && type.indexOf('touch') === 0) {
+		// Needs DomEvent.Pointer.js
+		addPointerListener(obj, type, handler, id);
+
+	} else if (touch && (type === 'dblclick') && addDoubleTapListener &&
+	           !(pointer && chrome)) {
+		// Chrome >55 does not need the synthetic dblclicks from addDoubleTapListener
+		// See #5180
+		addDoubleTapListener(obj, handler, id);
+
+	} else if ('addEventListener' in obj) {
+
+		if (type === 'mousewheel') {
+			obj.addEventListener('onwheel' in obj ? 'wheel' : 'mousewheel', handler, passiveEvents ? {passive: false} : false);
+
+		} else if ((type === 'mouseenter') || (type === 'mouseleave')) {
+			handler = function (e) {
+				e = e || window.event;
+				if (isExternalTarget(obj, e)) {
+					originalHandler(e);
+				}
+			};
+			obj.addEventListener(type === 'mouseenter' ? 'mouseover' : 'mouseout', handler, false);
+
+		} else {
+			if (type === 'click' && android) {
+				handler = function (e) {
+					filterClick(e, originalHandler);
+				};
+			}
+			obj.addEventListener(type, handler, false);
+		}
+
+	} else if ('attachEvent' in obj) {
+		obj.attachEvent('on' + type, handler);
+	}
+
+	obj[eventsKey] = obj[eventsKey] || {};
+	obj[eventsKey][id] = handler;
+}
+
+function removeOne(obj, type, fn, context) {
+
+	var id = type + stamp(fn) + (context ? '_' + stamp(context) : ''),
+	    handler = obj[eventsKey] && obj[eventsKey][id];
+
+	if (!handler) { return this; }
+
+	if (pointer && type.indexOf('touch') === 0) {
+		removePointerListener(obj, type, id);
+
+	} else if (touch && (type === 'dblclick') && removeDoubleTapListener &&
+	           !(pointer && chrome)) {
+		removeDoubleTapListener(obj, id);
+
+	} else if ('removeEventListener' in obj) {
+
+		if (type === 'mousewheel') {
+			obj.removeEventListener('onwheel' in obj ? 'wheel' : 'mousewheel', handler, passiveEvents ? {passive: false} : false);
+
+		} else {
+			obj.removeEventListener(
+				type === 'mouseenter' ? 'mouseover' :
+				type === 'mouseleave' ? 'mouseout' : type, handler, false);
+		}
+
+	} else if ('detachEvent' in obj) {
+		obj.detachEvent('on' + type, handler);
+	}
+
+	obj[eventsKey][id] = null;
+}
+
+// @function stopPropagation(ev: DOMEvent): this
+// Stop the given event from propagation to parent elements. Used inside the listener functions:
+// ```js
+// L.DomEvent.on(div, 'click', function (ev) {
+// 	L.DomEvent.stopPropagation(ev);
+// });
+// ```
+function stopPropagation(e) {
+
+	if (e.stopPropagation) {
+		e.stopPropagation();
+	} else if (e.originalEvent) {  // In case of Leaflet event.
+		e.originalEvent._stopped = true;
+	} else {
+		e.cancelBubble = true;
+	}
+	skipped(e);
+
+	return this;
+}
+
+// @function disableScrollPropagation(el: HTMLElement): this
+// Adds `stopPropagation` to the element's `'mousewheel'` events (plus browser variants).
+function disableScrollPropagation(el) {
+	addOne(el, 'mousewheel', stopPropagation);
+	return this;
+}
+
+// @function disableClickPropagation(el: HTMLElement): this
+// Adds `stopPropagation` to the element's `'click'`, `'doubleclick'`,
+// `'mousedown'` and `'touchstart'` events (plus browser variants).
+function disableClickPropagation(el) {
+	on(el, 'mousedown touchstart dblclick', stopPropagation);
+	addOne(el, 'click', fakeStop);
+	return this;
+}
+
+// @function preventDefault(ev: DOMEvent): this
+// Prevents the default action of the DOM Event `ev` from happening (such as
+// following a link in the href of the a element, or doing a POST request
+// with page reload when a `<form>` is submitted).
+// Use it inside listener functions.
+function preventDefault(e) {
+	if (e.preventDefault) {
+		e.preventDefault();
+	} else {
+		e.returnValue = false;
+	}
+	return this;
+}
+
+// @function stop(ev: DOMEvent): this
+// Does `stopPropagation` and `preventDefault` at the same time.
+function stop(e) {
+	preventDefault(e);
+	stopPropagation(e);
+	return this;
+}
+
+// @function getMousePosition(ev: DOMEvent, container?: HTMLElement): Point
+// Gets normalized mouse position from a DOM event relative to the
+// `container` (border excluded) or to the whole page if not specified.
+function getMousePosition(e, container) {
+	if (!container) {
+		return new Point(e.clientX, e.clientY);
+	}
+
+	var scale = getScale(container),
+	    offset = scale.boundingClientRect; // left and top  values are in page scale (like the event clientX/Y)
+
+	return new Point(
+		// offset.left/top values are in page scale (like clientX/Y),
+		// whereas clientLeft/Top (border width) values are the original values (before CSS scale applies).
+		(e.clientX - offset.left) / scale.x - container.clientLeft,
+		(e.clientY - offset.top) / scale.y - container.clientTop
+	);
+}
+
+// Chrome on Win scrolls double the pixels as in other platforms (see #4538),
+// and Firefox scrolls device pixels, not CSS pixels
+var wheelPxFactor =
+	(win && chrome) ? 2 * window.devicePixelRatio :
+	gecko ? window.devicePixelRatio : 1;
+
+// @function getWheelDelta(ev: DOMEvent): Number
+// Gets normalized wheel delta from a mousewheel DOM event, in vertical
+// pixels scrolled (negative if scrolling down).
+// Events from pointing devices without precise scrolling are mapped to
+// a best guess of 60 pixels.
+function getWheelDelta(e) {
+	return (edge) ? e.wheelDeltaY / 2 : // Don't trust window-geometry-based delta
+	       (e.deltaY && e.deltaMode === 0) ? -e.deltaY / wheelPxFactor : // Pixels
+	       (e.deltaY && e.deltaMode === 1) ? -e.deltaY * 20 : // Lines
+	       (e.deltaY && e.deltaMode === 2) ? -e.deltaY * 60 : // Pages
+	       (e.deltaX || e.deltaZ) ? 0 :	// Skip horizontal/depth wheel events
+	       e.wheelDelta ? (e.wheelDeltaY || e.wheelDelta) / 2 : // Legacy IE pixels
+	       (e.detail && Math.abs(e.detail) < 32765) ? -e.detail * 20 : // Legacy Moz lines
+	       e.detail ? e.detail / -32765 * 60 : // Legacy Moz pages
+	       0;
+}
+
+var skipEvents = {};
+
+function fakeStop(e) {
+	// fakes stopPropagation by setting a special event flag, checked/reset with skipped(e)
+	skipEvents[e.type] = true;
+}
+
+function skipped(e) {
+	var events = skipEvents[e.type];
+	// reset when checking, as it's only used in map container and propagates outside of the map
+	skipEvents[e.type] = false;
+	return events;
+}
+
+// check if element really left/entered the event target (for mouseenter/mouseleave)
+function isExternalTarget(el, e) {
+
+	var related = e.relatedTarget;
+
+	if (!related) { return true; }
+
+	try {
+		while (related && (related !== el)) {
+			related = related.parentNode;
+		}
+	} catch (err) {
+		return false;
+	}
+	return (related !== el);
+}
+
+var lastClick;
+
+// this is a horrible workaround for a bug in Android where a single touch triggers two click events
+function filterClick(e, handler) {
+	var timeStamp = (e.timeStamp || (e.originalEvent && e.originalEvent.timeStamp)),
+	    elapsed = lastClick && (timeStamp - lastClick);
+
+	// are they closer together than 500ms yet more than 100ms?
+	// Android typically triggers them ~300ms apart while multiple listeners
+	// on the same event should be triggered far faster;
+	// or check if click is simulated on the element, and if it is, reject any non-simulated events
+
+	if ((elapsed && elapsed > 100 && elapsed < 500) || (e.target._simulatedClick && !e._simulated)) {
+		stop(e);
+		return;
+	}
+	lastClick = timeStamp;
+
+	handler(e);
+}
+
+
+
+
+var DomEvent = (Object.freeze || Object)({
+	on: on,
+	off: off,
+	stopPropagation: stopPropagation,
+	disableScrollPropagation: disableScrollPropagation,
+	disableClickPropagation: disableClickPropagation,
+	preventDefault: preventDefault,
+	stop: stop,
+	getMousePosition: getMousePosition,
+	getWheelDelta: getWheelDelta,
+	fakeStop: fakeStop,
+	skipped: skipped,
+	isExternalTarget: isExternalTarget,
+	addListener: on,
+	removeListener: off
 });
 
 /*
@@ -13360,6 +13810,13 @@ var Map = Evented.extend({
 	initialize: function (id, options) { // (HTMLElement or String, Object)
 		options = setOptions(this, options);
 
+		// Make sure to assign internal flags at the beginning,
+		// to avoid inconsistent state in some edge cases.
+		this._handlers = [];
+		this._layers = {};
+		this._zoomBoundLayers = {};
+		this._sizeChanged = true;
+
 		this._initContainer(id);
 		this._initLayout();
 
@@ -13379,11 +13836,6 @@ var Map = Evented.extend({
 		if (options.center && options.zoom !== undefined) {
 			this.setView(toLatLng(options.center), options.zoom, {reset: true});
 		}
-
-		this._handlers = [];
-		this._layers = {};
-		this._zoomBoundLayers = {};
-		this._sizeChanged = true;
 
 		this.callInitHooks();
 
@@ -13659,7 +14111,7 @@ var Map = Evented.extend({
 			}
 		}
 
-		this._moveStart(true);
+		this._moveStart(true, options.noMoveStart);
 
 		frame.call(this);
 		return this;
@@ -13697,10 +14149,15 @@ var Map = Evented.extend({
 	// @method setMinZoom(zoom: Number): this
 	// Sets the lower limit for the available zoom levels (see the [minZoom](#map-minzoom) option).
 	setMinZoom: function (zoom) {
+		var oldZoom = this.options.minZoom;
 		this.options.minZoom = zoom;
 
-		if (this._loaded && this.getZoom() < this.options.minZoom) {
-			return this.setZoom(zoom);
+		if (this._loaded && oldZoom !== zoom) {
+			this.fire('zoomlevelschange');
+
+			if (this.getZoom() < this.options.minZoom) {
+				return this.setZoom(zoom);
+			}
 		}
 
 		return this;
@@ -13709,10 +14166,15 @@ var Map = Evented.extend({
 	// @method setMaxZoom(zoom: Number): this
 	// Sets the upper limit for the available zoom levels (see the [maxZoom](#map-maxzoom) option).
 	setMaxZoom: function (zoom) {
+		var oldZoom = this.options.maxZoom;
 		this.options.maxZoom = zoom;
 
-		if (this._loaded && (this.getZoom() > this.options.maxZoom)) {
-			return this.setZoom(zoom);
+		if (this._loaded && oldZoom !== zoom) {
+			this.fire('zoomlevelschange');
+
+			if (this.getZoom() > this.options.maxZoom) {
+				return this.setZoom(zoom);
+			}
 		}
 
 		return this;
@@ -13733,7 +14195,52 @@ var Map = Evented.extend({
 		return this;
 	},
 
-	// @method invalidateSize(options: Zoom/Pan options): this
+	// @method panInside(latlng: LatLng, options?: options): this
+	// Pans the map the minimum amount to make the `latlng` visible. Use
+	// `padding`, `paddingTopLeft` and `paddingTopRight` options to fit
+	// the display to more restricted bounds, like [`fitBounds`](#map-fitbounds).
+	// If `latlng` is already within the (optionally padded) display bounds,
+	// the map will not be panned.
+	panInside: function (latlng, options) {
+		options = options || {};
+
+		var paddingTL = toPoint(options.paddingTopLeft || options.padding || [0, 0]),
+		    paddingBR = toPoint(options.paddingBottomRight || options.padding || [0, 0]),
+		    center = this.getCenter(),
+		    pixelCenter = this.project(center),
+		    pixelPoint = this.project(latlng),
+		    pixelBounds = this.getPixelBounds(),
+		    halfPixelBounds = pixelBounds.getSize().divideBy(2),
+		    paddedBounds = toBounds([pixelBounds.min.add(paddingTL), pixelBounds.max.subtract(paddingBR)]);
+
+		if (!paddedBounds.contains(pixelPoint)) {
+			this._enforcingBounds = true;
+			var diff = pixelCenter.subtract(pixelPoint),
+			    newCenter = toPoint(pixelPoint.x + diff.x, pixelPoint.y + diff.y);
+
+			if (pixelPoint.x < paddedBounds.min.x || pixelPoint.x > paddedBounds.max.x) {
+				newCenter.x = pixelCenter.x - diff.x;
+				if (diff.x > 0) {
+					newCenter.x += halfPixelBounds.x - paddingTL.x;
+				} else {
+					newCenter.x -= halfPixelBounds.x - paddingBR.x;
+				}
+			}
+			if (pixelPoint.y < paddedBounds.min.y || pixelPoint.y > paddedBounds.max.y) {
+				newCenter.y = pixelCenter.y - diff.y;
+				if (diff.y > 0) {
+					newCenter.y += halfPixelBounds.y - paddingTL.y;
+				} else {
+					newCenter.y -= halfPixelBounds.y - paddingBR.y;
+				}
+			}
+			this.panTo(this.unproject(newCenter), options);
+			this._enforcingBounds = false;
+		}
+		return this;
+	},
+
+	// @method invalidateSize(options: Zoom/pan options): this
 	// Checks if the map container size changed and updates the map if so —
 	// call it after you've changed the map size dynamically, also animating
 	// pan by default. If `options.pan` is `false`, panning will not occur.
@@ -13880,7 +14387,7 @@ var Map = Evented.extend({
 		var lat = pos.coords.latitude,
 		    lng = pos.coords.longitude,
 		    latlng = new LatLng(lat, lng),
-		    bounds = latlng.toBounds(pos.coords.accuracy),
+		    bounds = latlng.toBounds(pos.coords.accuracy * 2),
 		    options = this._locateOptions;
 
 		if (options.setView) {
@@ -13906,8 +14413,7 @@ var Map = Evented.extend({
 		this.fire('locationfound', data);
 	},
 
-	// TODO handler.addTo
-	// TODO Appropiate docs section?
+	// TODO Appropriate docs section?
 	// @section Other Methods
 	// @method addHandler(name: String, HandlerClass: Function): this
 	// Adds a new `Handler` to the map, given its name and constructor function.
@@ -13942,14 +14448,24 @@ var Map = Evented.extend({
 		} catch (e) {
 			/*eslint-disable */
 			this._container._leaflet_id = undefined;
-			/*eslint-enable */
+			/* eslint-enable */
 			this._containerId = undefined;
 		}
+
+		if (this._locationWatchId !== undefined) {
+			this.stopLocate();
+		}
+
+		this._stop();
 
 		remove(this._mapPane);
 
 		if (this._clearControlPos) {
 			this._clearControlPos();
+		}
+		if (this._resizeRequest) {
+			cancelAnimFrame(this._resizeRequest);
+			this._resizeRequest = null;
 		}
 
 		this._clearHandlers();
@@ -14035,7 +14551,7 @@ var Map = Evented.extend({
 			this.options.maxZoom;
 	},
 
-	// @method getBoundsZoom(bounds: LatLngBounds, inside?: Boolean): Number
+	// @method getBoundsZoom(bounds: LatLngBounds, inside?: Boolean, padding?: Point): Number
 	// Returns the maximum zoom level on which the given bounds fit to the map
 	// view in its entirety. If `inside` (optional) is set to `true`, the method
 	// instead returns the minimum zoom level on which the map view fits into
@@ -14324,7 +14840,7 @@ var Map = Evented.extend({
 		// Pane for `GridLayer`s and `TileLayer`s
 		this.createPane('tilePane');
 		// @pane overlayPane: HTMLElement = 400
-		// Pane for vector overlays (`Path`s), like `Polyline`s and `Polygon`s
+		// Pane for vectors (`Path`s, like `Polyline`s and `Polygon`s), `ImageOverlay`s and `VideoOverlay`s
 		this.createPane('shadowPane');
 		// @pane shadowPane: HTMLElement = 500
 		// Pane for overlay shadows (e.g. `Marker` shadows)
@@ -14333,7 +14849,7 @@ var Map = Evented.extend({
 		// Pane for `Icon`s of `Marker`s
 		this.createPane('markerPane');
 		// @pane tooltipPane: HTMLElement = 650
-		// Pane for tooltip.
+		// Pane for `Tooltip`s.
 		this.createPane('tooltipPane');
 		// @pane popupPane: HTMLElement = 700
 		// Pane for `Popup`s.
@@ -14360,7 +14876,7 @@ var Map = Evented.extend({
 
 		var zoomChanged = this._zoom !== zoom;
 		this
-			._moveStart(zoomChanged)
+			._moveStart(zoomChanged, false)
 			._move(center, zoom)
 			._moveEnd(zoomChanged);
 
@@ -14377,7 +14893,7 @@ var Map = Evented.extend({
 		}
 	},
 
-	_moveStart: function (zoomChanged) {
+	_moveStart: function (zoomChanged, noMoveStart) {
 		// @event zoomstart: Event
 		// Fired when the map zoom is about to change (e.g. before zoom animation).
 		// @event movestart: Event
@@ -14385,7 +14901,10 @@ var Map = Evented.extend({
 		if (zoomChanged) {
 			this.fire('zoomstart');
 		}
-		return this.fire('movestart');
+		if (!noMoveStart) {
+			this.fire('movestart');
+		}
+		return this;
 	},
 
 	_move: function (center, zoom, data) {
@@ -14481,9 +15000,15 @@ var Map = Evented.extend({
 		// this event. Also fired on mobile when the user holds a single touch
 		// for a second (also called long press).
 		// @event keypress: KeyboardEvent
-		// Fired when the user presses a key from the keyboard while the map is focused.
+		// Fired when the user presses a key from the keyboard that produces a character value while the map is focused.
+		// @event keydown: KeyboardEvent
+		// Fired when the user presses a key from the keyboard while the map is focused. Unlike the `keypress` event,
+		// the `keydown` event is fired for keys that produce a character value and for keys
+		// that do not produce a character value.
+		// @event keyup: KeyboardEvent
+		// Fired when the user releases a key from the keyboard while the map is focused.
 		onOff(this._container, 'click dblclick mousedown mouseup ' +
-			'mouseover mouseout mousemove contextmenu keypress', this._handleDOMEvent, this);
+			'mouseover mouseout mousemove contextmenu keypress keydown keyup', this._handleDOMEvent, this);
 
 		if (this.options.trackResize) {
 			onOff(window, 'resize', this._onResize, this);
@@ -14547,7 +15072,7 @@ var Map = Evented.extend({
 
 		var type = e.type;
 
-		if (type === 'mousedown' || type === 'keypress') {
+		if (type === 'mousedown' || type === 'keypress' || type === 'keyup' || type === 'keydown') {
 			// prevents outline when clicking on keyboard-focusable element
 			preventOutline(e.target || e.srcElement);
 		}
@@ -14586,10 +15111,10 @@ var Map = Evented.extend({
 			originalEvent: e
 		};
 
-		if (e.type !== 'keypress') {
-			var isMarker = (target.options && 'icon' in target.options);
+		if (e.type !== 'keypress' && e.type !== 'keydown' && e.type !== 'keyup') {
+			var isMarker = target.getLatLng && (!target._radius || target._radius <= 10);
 			data.containerPoint = isMarker ?
-					this.latLngToContainerPoint(target.getLatLng()) : this.mouseEventToContainerPoint(e);
+				this.latLngToContainerPoint(target.getLatLng()) : this.mouseEventToContainerPoint(e);
 			data.layerPoint = this.containerPointToLayerPoint(data.containerPoint);
 			data.latlng = isMarker ? target.getLatLng() : this.layerPointToLatLng(data.layerPoint);
 		}
@@ -14748,7 +15273,7 @@ var Map = Evented.extend({
 
 	_tryAnimatedPan: function (center, options) {
 		// difference between the new and current centers in pixels
-		var offset = this._getCenterOffset(center)._floor();
+		var offset = this._getCenterOffset(center)._trunc();
 
 		// don't animate too far unless animate: true specified in options
 		if ((options && options.animate) !== true && !this.getSize().contains(offset)) { return false; }
@@ -14775,18 +15300,21 @@ var Map = Evented.extend({
 			}
 		}, this);
 
-		this.on('load moveend', function () {
-			var c = this.getCenter(),
-			    z = this.getZoom();
-			setTransform(this._proxy, this.project(c, z), this.getZoomScale(z, 1));
-		}, this);
+		this.on('load moveend', this._animMoveEnd, this);
 
 		this._on('unload', this._destroyAnimProxy, this);
 	},
 
 	_destroyAnimProxy: function () {
 		remove(this._proxy);
+		this.off('load moveend', this._animMoveEnd, this);
 		delete this._proxy;
+	},
+
+	_animMoveEnd: function () {
+		var c = this.getCenter(),
+		    z = this.getZoom();
+		setTransform(this._proxy, this.project(c, z), this.getZoomScale(z, 1));
 	},
 
 	_catchTransitionEnd: function (e) {
@@ -14818,7 +15346,7 @@ var Map = Evented.extend({
 
 		requestAnimFrame(function () {
 			this
-			    ._moveStart(true)
+			    ._moveStart(true, false)
 			    ._animateZoom(center, zoom, true);
 		}, this);
 
@@ -14826,6 +15354,8 @@ var Map = Evented.extend({
 	},
 
 	_animateZoom: function (center, zoom, startAnim, noUpdate) {
+		if (!this._mapPane) { return; }
+
 		if (startAnim) {
 			this._animatingZoom = true;
 
@@ -14836,8 +15366,9 @@ var Map = Evented.extend({
 			addClass(this._mapPane, 'leaflet-zoom-anim');
 		}
 
+		// @section Other Events
 		// @event zoomanim: ZoomAnimEvent
-		// Fired on every frame of a zoom animation
+		// Fired at least once per zoom animation. For continuous zoom, like pinch zooming, fired once per frame during zoom.
 		this.fire('zoomanim', {
 			center: center,
 			zoom: zoom,
@@ -14851,7 +15382,9 @@ var Map = Evented.extend({
 	_onZoomTransitionEnd: function () {
 		if (!this._animatingZoom) { return; }
 
-		removeClass(this._mapPane, 'leaflet-zoom-anim');
+		if (this._mapPane) {
+			removeClass(this._mapPane, 'leaflet-zoom-anim');
+		}
 
 		this._animatingZoom = false;
 
@@ -14953,6 +15486,8 @@ var Control = Class.extend({
 			corner.appendChild(container);
 		}
 
+		this._map.on('unload', this.remove, this);
+
 		return this;
 	},
 
@@ -14969,6 +15504,7 @@ var Control = Class.extend({
 			this.onRemove(this._map);
 		}
 
+		this._map.off('unload', this.remove, this);
 		this._map = null;
 
 		return this;
@@ -15191,13 +15727,13 @@ var Layers = Control.extend({
 	// Expand the control container if collapsed.
 	expand: function () {
 		addClass(this._container, 'leaflet-control-layers-expanded');
-		this._form.style.height = null;
+		this._section.style.height = null;
 		var acceptableHeight = this._map.getSize().y - (this._container.offsetTop + 50);
-		if (acceptableHeight < this._form.clientHeight) {
-			addClass(this._form, 'leaflet-control-layers-scrollbar');
-			this._form.style.height = acceptableHeight + 'px';
+		if (acceptableHeight < this._section.clientHeight) {
+			addClass(this._section, 'leaflet-control-layers-scrollbar');
+			this._section.style.height = acceptableHeight + 'px';
 		} else {
-			removeClass(this._form, 'leaflet-control-layers-scrollbar');
+			removeClass(this._section, 'leaflet-control-layers-scrollbar');
 		}
 		this._checkDisabledLayers();
 		return this;
@@ -15221,7 +15757,7 @@ var Layers = Control.extend({
 		disableClickPropagation(container);
 		disableScrollPropagation(container);
 
-		var form = this._form = create$1('form', className + '-list');
+		var section = this._section = create$1('section', className + '-list');
 
 		if (collapsed) {
 			this._map.on('click', this.collapse, this);
@@ -15249,11 +15785,11 @@ var Layers = Control.extend({
 			this.expand();
 		}
 
-		this._baseLayersList = create$1('div', className + '-base', form);
-		this._separator = create$1('div', className + '-separator', form);
-		this._overlaysList = create$1('div', className + '-overlays', form);
+		this._baseLayersList = create$1('div', className + '-base', section);
+		this._separator = create$1('div', className + '-separator', section);
+		this._overlaysList = create$1('div', className + '-overlays', section);
 
-		container.appendChild(form);
+		container.appendChild(section);
 	},
 
 	_getLayer: function (id) {
@@ -15366,7 +15902,7 @@ var Layers = Control.extend({
 			input.className = 'leaflet-control-layers-selector';
 			input.defaultChecked = checked;
 		} else {
-			input = this._createRadioElement('leaflet-base-layers', checked);
+			input = this._createRadioElement('leaflet-base-layers_' + stamp(this), checked);
 		}
 
 		this._layerControlInputs.push(input);
@@ -15464,7 +16000,7 @@ var Layers = Control.extend({
 
 
 // @factory L.control.layers(baselayers?: Object, overlays?: Object, options?: Control.Layers options)
-// Creates an attribution control with the given layers. Base layers will be switched with radio buttons, while overlays will be switched with checkboxes. Note that all base layers should be passed in the base layers object, but only one should be added to the map during map instantiation.
+// Creates a layers control with the given layers. Base layers will be switched with radio buttons, while overlays will be switched with checkboxes. Note that all base layers should be passed in the base layers object, but only one should be added to the map during map instantiation.
 var layers = function (baseLayers, overlays, options) {
 	return new Layers(baseLayers, overlays, options);
 };
@@ -15590,6 +16126,10 @@ Map.mergeOptions({
 
 Map.addInitHook(function () {
 	if (this.options.zoomControl) {
+		// @section Controls
+		// @property zoomControl: Control.Zoom
+		// The default zoom control (only available if the
+		// [`zoomControl` option](#map-zoomcontrol) was `true` when creating the map).
 		this.zoomControl = new Zoom();
 		this.addControl(this.zoomControl);
 	}
@@ -15669,8 +16209,8 @@ var Scale = Control.extend({
 		    y = map.getSize().y / 2;
 
 		var maxMeters = map.distance(
-				map.containerPointToLatLng([0, y]),
-				map.containerPointToLatLng([this.options.maxWidth, y]));
+			map.containerPointToLatLng([0, y]),
+			map.containerPointToLatLng([this.options.maxWidth, y]));
 
 		this._updateScales(maxMeters);
 	},
@@ -15747,7 +16287,7 @@ var Attribution = Control.extend({
 
 		// @option prefix: String = 'Leaflet'
 		// The HTML text shown before the attributions. Pass `false` to disable.
-		prefix: '<a href="http://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>'
+		prefix: '<a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a>'
 	},
 
 	initialize: function (options) {
@@ -15912,6 +16452,14 @@ var Handler = Class.extend({
 	// Called when the handler is disabled, should remove the event hooks added previously.
 });
 
+// @section There is static function which can be called without instantiating L.Handler:
+// @function addTo(map: Map, name: String): this
+// Adds a new Handler to the given map with the given name.
+Handler.addTo = function (map, name) {
+	map.addHandler(name, this);
+	return this;
+};
+
 var Mixin = {Events: Events};
 
 /*
@@ -16021,9 +16569,13 @@ var Draggable = Evented.extend({
 		// Fired when a drag is about to start.
 		this.fire('down');
 
-		var first = e.touches ? e.touches[0] : e;
+		var first = e.touches ? e.touches[0] : e,
+		    sizedParent = getSizedParentNode(this._element);
 
 		this._startPoint = new Point(first.clientX, first.clientY);
+
+		// Cache the scale, so that we can continuously compensate for it during drag (_onMove).
+		this._parentScale = getScale(sizedParent);
 
 		on(document, MOVE[e.type], this._onMove, this);
 		on(document, END[e.type], this._onUp, this);
@@ -16043,11 +16595,16 @@ var Draggable = Evented.extend({
 		}
 
 		var first = (e.touches && e.touches.length === 1 ? e.touches[0] : e),
-		    newPoint = new Point(first.clientX, first.clientY),
-		    offset = newPoint.subtract(this._startPoint);
+		    offset = new Point(first.clientX, first.clientY)._subtract(this._startPoint);
 
 		if (!offset.x && !offset.y) { return; }
 		if (Math.abs(offset.x) + Math.abs(offset.y) < this.options.clickTolerance) { return; }
+
+		// We assume that the parent container's position, border and scale do not change for the duration of the drag.
+		// Therefore there is no need to account for the position and border (they are eliminated by the subtraction)
+		// and we can use the cached value for the scale.
+		offset.x /= this._parentScale.x;
+		offset.y /= this._parentScale.y;
 
 		preventDefault(e);
 
@@ -16138,7 +16695,7 @@ var Draggable = Evented.extend({
 /*
  * @namespace LineUtil
  *
- * Various utility functions for polyine points processing, used by Leaflet internally to make polylines lightning-fast.
+ * Various utility functions for polyline points processing, used by Leaflet internally to make polylines lightning-fast.
  */
 
 // Simplify polyline with vertex reduction and Douglas-Peucker simplification.
@@ -16393,10 +16950,10 @@ var LineUtil = (Object.freeze || Object)({
  */
 
 /* @function clipPolygon(points: Point[], bounds: Bounds, round?: Boolean): Point[]
- * Clips the polygon geometry defined by the given `points` by the given bounds (using the [Sutherland-Hodgeman algorithm](https://en.wikipedia.org/wiki/Sutherland%E2%80%93Hodgman_algorithm)).
+ * Clips the polygon geometry defined by the given `points` by the given bounds (using the [Sutherland-Hodgman algorithm](https://en.wikipedia.org/wiki/Sutherland%E2%80%93Hodgman_algorithm)).
  * Used by Leaflet to only show polygon points that are on the screen or near, increasing
  * performance. Note that polygon points needs different algorithm for clipping
- * than polyline, so there's a seperate method for it.
+ * than polyline, so there's a separate method for it.
  */
 function clipPolygon(points, bounds, round) {
 	var clippedPoints,
@@ -16475,7 +17032,7 @@ var LonLat = {
  * @namespace Projection
  * @projection L.Projection.Mercator
  *
- * Elliptical Mercator projection — more complex than Spherical Mercator. Takes into account that Earth is a geoid, not a perfect sphere. Used by the EPSG:3395 CRS.
+ * Elliptical Mercator projection — more complex than Spherical Mercator. Assumes that Earth is an ellipsoid. Used by the EPSG:3395 CRS.
  */
 
 var Mercator = {
@@ -16533,6 +17090,10 @@ var Mercator = {
  * @method unproject(point: Point): LatLng
  * The inverse of `project`. Projects a 2D point into a geographical location.
  * Only accepts actual `L.Point` instances, not arrays.
+
+ * Note that the projection instances do not inherit from Leafet's `Class` object,
+ * and can't be instantiated. Also, new classes can't inherit from them,
+ * and methods can't be added to them with the `include` function.
 
  */
 
@@ -16631,7 +17192,7 @@ CRS.Simple = Simple;
  * @example
  *
  * ```js
- * var layer = L.Marker(latlng).addTo(map);
+ * var layer = L.marker(latlng).addTo(map);
  * layer.addTo(map);
  * layer.remove();
  * ```
@@ -16653,7 +17214,7 @@ var Layer = Evented.extend({
 		pane: 'overlayPane',
 
 		// @option attribution: String = null
-		// String to be shown in the attribution control, describes the layer data, e.g. "© Mapbox".
+		// String to be shown in the attribution control, e.g. "© OpenStreetMap contributors". It describes the layer data and is often a legal obligation towards copyright holders and tile providers.
 		attribution: null,
 
 		bubblingMouseEvents: true
@@ -16915,7 +17476,9 @@ Map.include({
 
 var LayerGroup = Layer.extend({
 
-	initialize: function (layers) {
+	initialize: function (layers, options) {
+		setOptions(this, options);
+
 		this._layers = {};
 
 		var i, len;
@@ -16970,10 +17533,7 @@ var LayerGroup = Layer.extend({
 	// @method clearLayers(): this
 	// Removes all the layers from the group.
 	clearLayers: function () {
-		for (var i in this._layers) {
-			this.removeLayer(this._layers[i]);
-		}
-		return this;
+		return this.eachLayer(this.removeLayer, this);
 	},
 
 	// @method invoke(methodName: String, …): this
@@ -16996,15 +17556,11 @@ var LayerGroup = Layer.extend({
 	},
 
 	onAdd: function (map) {
-		for (var i in this._layers) {
-			map.addLayer(this._layers[i]);
-		}
+		this.eachLayer(map.addLayer, map);
 	},
 
 	onRemove: function (map) {
-		for (var i in this._layers) {
-			map.removeLayer(this._layers[i]);
-		}
+		this.eachLayer(map.removeLayer, map);
 	},
 
 	// @method eachLayer(fn: Function, context?: Object): this
@@ -17031,10 +17587,7 @@ var LayerGroup = Layer.extend({
 	// Returns an array of all the layers added to the group.
 	getLayers: function () {
 		var layers = [];
-
-		for (var i in this._layers) {
-			layers.push(this._layers[i]);
-		}
+		this.eachLayer(layers.push, layers);
 		return layers;
 	},
 
@@ -17052,10 +17605,10 @@ var LayerGroup = Layer.extend({
 });
 
 
-// @factory L.layerGroup(layers?: Layer[])
-// Create a layer group, optionally given an initial set of layers.
-var layerGroup = function (layers) {
-	return new LayerGroup(layers);
+// @factory L.layerGroup(layers?: Layer[], options?: Object)
+// Create a layer group, optionally given an initial set of layers and an `options` object.
+var layerGroup = function (layers, options) {
+	return new LayerGroup(layers, options);
 };
 
 /*
@@ -17126,7 +17679,7 @@ var FeatureGroup = LayerGroup.extend({
 	},
 
 	// @method bringToBack(): this
-	// Brings the layer group to the top of all other layers
+	// Brings the layer group to the back of all other layers
 	bringToBack: function () {
 		return this.invoke('bringToBack');
 	},
@@ -17198,8 +17751,11 @@ var Icon = Class.extend({
 	 * will be aligned so that this point is at the marker's geographical location. Centered
 	 * by default if size is specified, also can be set in CSS with negative margins.
 	 *
-	 * @option popupAnchor: Point = null
+	 * @option popupAnchor: Point = [0, 0]
 	 * The coordinates of the point from which popups will "open", relative to the icon anchor.
+	 *
+	 * @option tooltipAnchor: Point = [0, 0]
+	 * The coordinates of the point from which tooltips will "open", relative to the icon anchor.
 	 *
 	 * @option shadowUrl: String = null
 	 * The URL to the icon shadow image. If not specified, no shadow image will be created.
@@ -17216,6 +17772,11 @@ var Icon = Class.extend({
 	 * @option className: String = ''
 	 * A custom class name to assign to both icon and shadow images. Empty by default.
 	 */
+
+	options: {
+		popupAnchor: [0, 0],
+		tooltipAnchor: [0, 0]
+	},
 
 	initialize: function (options) {
 		setOptions(this, options);
@@ -17328,9 +17889,9 @@ var IconDefault = Icon.extend({
 		}
 
 		// @option imagePath: String
-		// `Icon.Default` will try to auto-detect the absolute location of the
+		// `Icon.Default` will try to auto-detect the location of the
 		// blue icon images. If you are placing these images in a non-standard
-		// way, set this option to point to the right absolute path.
+		// way, set this option to point to the right path.
 		return (this.options.imagePath || IconDefault.imagePath) + Icon.prototype._getIconUrl.call(this, name);
 	},
 
@@ -17344,7 +17905,7 @@ var IconDefault = Icon.extend({
 		if (path === null || path.indexOf('url') !== 0) {
 			path = '';
 		} else {
-			path = path.replace(/^url\([\"\']?/, '').replace(/marker-icon\.png[\"\']?\)$/, '');
+			path = path.replace(/^url\(["']?/, '').replace(/marker-icon\.png["']?\)$/, '');
 		}
 
 		return path;
@@ -17383,6 +17944,7 @@ var MarkerDrag = Handler.extend({
 
 		this._draggable.on({
 			dragstart: this._onDragStart,
+			predrag: this._onPreDrag,
 			drag: this._onDrag,
 			dragend: this._onDragEnd
 		}, this).enable();
@@ -17393,6 +17955,7 @@ var MarkerDrag = Handler.extend({
 	removeHooks: function () {
 		this._draggable.off({
 			dragstart: this._onDragStart,
+			predrag: this._onPreDrag,
 			drag: this._onDrag,
 			dragend: this._onDragEnd
 		}, this).disable();
@@ -17404,6 +17967,42 @@ var MarkerDrag = Handler.extend({
 
 	moved: function () {
 		return this._draggable && this._draggable._moved;
+	},
+
+	_adjustPan: function (e) {
+		var marker = this._marker,
+		    map = marker._map,
+		    speed = this._marker.options.autoPanSpeed,
+		    padding = this._marker.options.autoPanPadding,
+		    iconPos = getPosition(marker._icon),
+		    bounds = map.getPixelBounds(),
+		    origin = map.getPixelOrigin();
+
+		var panBounds = toBounds(
+			bounds.min._subtract(origin).add(padding),
+			bounds.max._subtract(origin).subtract(padding)
+		);
+
+		if (!panBounds.contains(iconPos)) {
+			// Compute incremental movement
+			var movement = toPoint(
+				(Math.max(panBounds.max.x, iconPos.x) - panBounds.max.x) / (bounds.max.x - panBounds.max.x) -
+				(Math.min(panBounds.min.x, iconPos.x) - panBounds.min.x) / (bounds.min.x - panBounds.min.x),
+
+				(Math.max(panBounds.max.y, iconPos.y) - panBounds.max.y) / (bounds.max.y - panBounds.max.y) -
+				(Math.min(panBounds.min.y, iconPos.y) - panBounds.min.y) / (bounds.min.y - panBounds.min.y)
+			).multiplyBy(speed);
+
+			map.panBy(movement, {animate: false});
+
+			this._draggable._newPos._add(movement);
+			this._draggable._startPos._add(movement);
+
+			setPosition(marker._icon, this._draggable._newPos);
+			this._onDrag(e);
+
+			this._panRequest = requestAnimFrame(this._adjustPan.bind(this, e));
+		}
 	},
 
 	_onDragStart: function () {
@@ -17421,10 +18020,17 @@ var MarkerDrag = Handler.extend({
 		    .fire('dragstart');
 	},
 
+	_onPreDrag: function (e) {
+		if (this._marker.options.autoPan) {
+			cancelAnimFrame(this._panRequest);
+			this._panRequest = requestAnimFrame(this._adjustPan.bind(this, e));
+		}
+	},
+
 	_onDrag: function (e) {
 		var marker = this._marker,
 		    shadow = marker._shadow,
-		iconPos = getPosition(marker._icon),
+		    iconPos = getPosition(marker._icon),
 		    latlng = marker._map.layerPointToLatLng(iconPos);
 
 		// update shadow position
@@ -17446,6 +18052,8 @@ var MarkerDrag = Handler.extend({
 	_onDragEnd: function (e) {
 		// @event dragend: DragEndEvent
 		// Fired when the user stops dragging the marker.
+
+		 cancelAnimFrame(this._panRequest);
 
 		// @event moveend: Event
 		// Fired when the marker stops moving (because of dragging).
@@ -17483,10 +18091,6 @@ var Marker = Layer.extend({
 		// Option inherited from "Interactive layer" abstract class
 		interactive: true,
 
-		// @option draggable: Boolean = false
-		// Whether the marker is draggable with mouse/touch or not.
-		draggable: false,
-
 		// @option keyboard: Boolean = true
 		// Whether the marker can be tabbed to with a keyboard and clicked by pressing enter.
 		keyboard: true,
@@ -17519,10 +18123,32 @@ var Marker = Layer.extend({
 		// `Map pane` where the markers icon will be added.
 		pane: 'markerPane',
 
+		// @option pane: String = 'shadowPane'
+		// `Map pane` where the markers shadow will be added.
+		shadowPane: 'shadowPane',
+
 		// @option bubblingMouseEvents: Boolean = false
 		// When `true`, a mouse event on this marker will trigger the same event on the map
 		// (unless [`L.DomEvent.stopPropagation`](#domevent-stoppropagation) is used).
-		bubblingMouseEvents: false
+		bubblingMouseEvents: false,
+
+		// @section Draggable marker options
+		// @option draggable: Boolean = false
+		// Whether the marker is draggable with mouse/touch or not.
+		draggable: false,
+
+		// @option autoPan: Boolean = false
+		// Whether to pan the map when dragging this marker near its edge or not.
+		autoPan: false,
+
+		// @option autoPanPadding: Point = Point(50, 50)
+		// Distance (in pixels to the left/right and to the top/bottom) of the
+		// map edge to start panning the map.
+		autoPanPadding: [50, 50],
+
+		// @option autoPanSpeed: Number = 10
+		// Number of pixels the map should pan by.
+		autoPanSpeed: 10
 	},
 
 	/* @section
@@ -17593,6 +18219,12 @@ var Marker = Layer.extend({
 		return this.update();
 	},
 
+	// @method getIcon: Icon
+	// Returns the current icon used by the marker
+	getIcon: function () {
+		return this.options.icon;
+	},
+
 	// @method setIcon(icon: Icon): this
 	// Changes the marker icon.
 	setIcon: function (icon) {
@@ -17617,7 +18249,7 @@ var Marker = Layer.extend({
 
 	update: function () {
 
-		if (this._icon) {
+		if (this._icon && this._map) {
 			var pos = this._map.latLngToLayerPoint(this._latlng).round();
 			this._setPos(pos);
 		}
@@ -17642,8 +18274,9 @@ var Marker = Layer.extend({
 			if (options.title) {
 				icon.title = options.title;
 			}
-			if (options.alt) {
-				icon.alt = options.alt;
+
+			if (icon.tagName === 'IMG') {
+				icon.alt = options.alt || '';
 			}
 		}
 
@@ -17687,7 +18320,7 @@ var Marker = Layer.extend({
 		}
 		this._initInteraction();
 		if (newShadow && addShadow) {
-			this.getPane('shadowPane').appendChild(this._shadow);
+			this.getPane(options.shadowPane).appendChild(this._shadow);
 		}
 	},
 
@@ -17713,7 +18346,10 @@ var Marker = Layer.extend({
 	},
 
 	_setPos: function (pos) {
-		setPosition(this._icon, pos);
+
+		if (this._icon) {
+			setPosition(this._icon, pos);
+		}
 
 		if (this._shadow) {
 			setPosition(this._shadow, pos);
@@ -17725,7 +18361,9 @@ var Marker = Layer.extend({
 	},
 
 	_updateZIndex: function (offset) {
-		this._icon.style.zIndex = this._zIndex + offset;
+		if (this._icon) {
+			this._icon.style.zIndex = this._zIndex + offset;
+		}
 	},
 
 	_animateZoom: function (opt) {
@@ -17771,7 +18409,9 @@ var Marker = Layer.extend({
 	_updateOpacity: function () {
 		var opacity = this.options.opacity;
 
-		setOpacity(this._icon, opacity);
+		if (this._icon) {
+			setOpacity(this._icon, opacity);
+		}
 
 		if (this._shadow) {
 			setOpacity(this._shadow, opacity);
@@ -17787,11 +18427,11 @@ var Marker = Layer.extend({
 	},
 
 	_getPopupAnchor: function () {
-		return this.options.icon.options.popupAnchor || [0, 0];
+		return this.options.icon.options.popupAnchor;
 	},
 
 	_getTooltipAnchor: function () {
-		return this.options.icon.options.tooltipAnchor || [0, 0];
+		return this.options.icon.options.tooltipAnchor;
 	}
 });
 
@@ -17908,6 +18548,9 @@ var Path = Layer.extend({
 		setOptions(this, style);
 		if (this._renderer) {
 			this._renderer._updateStyle(this);
+			if (this.options.stroke && style && style.hasOwnProperty('weight')) {
+				this._updateBounds();
+			}
 		}
 		return this;
 	},
@@ -17942,7 +18585,7 @@ var Path = Layer.extend({
 
 	_clickTolerance: function () {
 		// used when doing hit detection for Canvas layers
-		return (this.options.stroke ? this.options.weight / 2 : 0) + (touch ? 10 : 0);
+		return (this.options.stroke ? this.options.weight / 2 : 0) + this._renderer.options.tolerance;
 	}
 });
 
@@ -17975,9 +18618,13 @@ var CircleMarker = Path.extend({
 	// @method setLatLng(latLng: LatLng): this
 	// Sets the position of a circle marker to a new location.
 	setLatLng: function (latlng) {
+		var oldLatLng = this._latlng;
 		this._latlng = toLatLng(latlng);
 		this.redraw();
-		return this.fire('move', {latlng: this._latlng});
+
+		// @event move: Event
+		// Fired when the marker is moved via [`setLatLng`](#circlemarker-setlatlng). Old and new coordinates are included in event arguments as `oldLatLng`, `latlng`.
+		return this.fire('move', {oldLatLng: oldLatLng, latlng: this._latlng});
 	},
 
 	// @method getLatLng(): LatLng
@@ -18127,8 +18774,8 @@ var Circle = CircleMarker.extend({
 			}
 
 			this._point = p.subtract(map.getPixelOrigin());
-			this._radius = isNaN(lngR) ? 0 : Math.max(Math.round(p.x - map.project([lat2, lng - lngR]).x), 1);
-			this._radiusY = Math.max(Math.round(p.y - top.y), 1);
+			this._radius = isNaN(lngR) ? 0 : p.x - map.project([lat2, lng - lngR]).x;
+			this._radiusY = p.y - top.y;
 
 		} else {
 			var latlng2 = crs.unproject(crs.project(this._latlng).subtract([this._mRadius, 0]));
@@ -18230,6 +18877,8 @@ var Polyline = Path.extend({
 		return !this._latlngs.length;
 	},
 
+	// @method closestLayerPoint(p: Point): Point
+	// Returns the point closest to `p` on the Polyline.
 	closestLayerPoint: function (p) {
 		var minDistance = Infinity,
 		    minPoint = null,
@@ -18347,14 +18996,19 @@ var Polyline = Path.extend({
 		this._rings = [];
 		this._projectLatlngs(this._latlngs, this._rings, pxBounds);
 
+		if (this._bounds.isValid() && pxBounds.isValid()) {
+			this._rawPxBounds = pxBounds;
+			this._updateBounds();
+		}
+	},
+
+	_updateBounds: function () {
 		var w = this._clickTolerance(),
 		    p = new Point(w, w);
-
-		if (this._bounds.isValid() && pxBounds.isValid()) {
-			pxBounds.min._subtract(p);
-			pxBounds.max._add(p);
-			this._pxBounds = pxBounds;
-		}
+		this._pxBounds = new Bounds([
+			this._rawPxBounds.min.subtract(p),
+			this._rawPxBounds.max.add(p)
+		]);
 	},
 
 	// recursively turns latlngs into a set of rings with projected coordinates
@@ -18621,7 +19275,7 @@ var Polygon = Polyline.extend({
 		var inside = false,
 		    part, p1, p2, i, j, k, len, len2;
 
-		if (!this._pxBounds.contains(p)) { return false; }
+		if (!this._pxBounds || !this._pxBounds.contains(p)) { return false; }
 
 		// ray casting algorithm for detecting if point is in polygon
 		for (i = 0, len = this._parts.length; i < len; i++) {
@@ -18717,6 +19371,9 @@ var GeoJSON = FeatureGroup.extend({
 	 * @option coordsToLatLng: Function = *
 	 * A `Function` that will be used for converting GeoJSON coordinates to `LatLng`s.
 	 * The default is the `coordsToLatLng` static method.
+	 *
+	 * @option markersInheritOptions: Boolean = false
+	 * Whether default Markers for "Point" type Features inherit from group options.
 	 */
 
 	initialize: function (geojson, options) {
@@ -18766,9 +19423,13 @@ var GeoJSON = FeatureGroup.extend({
 		return this.addLayer(layer);
 	},
 
-	// @method resetStyle( <Path> layer ): this
+	// @method resetStyle( <Path> layer? ): this
 	// Resets the given vector layer's style to the original GeoJSON style, useful for resetting style after hover events.
+	// If `layer` is omitted, the style of all features in the current layer is reset.
 	resetStyle: function (layer) {
+		if (layer === undefined) {
+			return this.eachLayer(this.resetStyle, this);
+		}
 		// reset any custom styles
 		layer.options = extend({}, layer.defaultOptions);
 		this._setLayerStyle(layer, this.options.style);
@@ -18784,10 +19445,10 @@ var GeoJSON = FeatureGroup.extend({
 	},
 
 	_setLayerStyle: function (layer, style) {
-		if (typeof style === 'function') {
-			style = style(layer.feature);
-		}
 		if (layer.setStyle) {
+			if (typeof style === 'function') {
+				style = style(layer.feature);
+			}
 			layer.setStyle(style);
 		}
 	}
@@ -18816,12 +19477,12 @@ function geometryToLayer(geojson, options) {
 	switch (geometry.type) {
 	case 'Point':
 		latlng = _coordsToLatLng(coords);
-		return pointToLayer ? pointToLayer(geojson, latlng) : new Marker(latlng);
+		return _pointToLayer(pointToLayer, geojson, latlng, options);
 
 	case 'MultiPoint':
 		for (i = 0, len = coords.length; i < len; i++) {
 			latlng = _coordsToLatLng(coords[i]);
-			layers.push(pointToLayer ? pointToLayer(geojson, latlng) : new Marker(latlng));
+			layers.push(_pointToLayer(pointToLayer, geojson, latlng, options));
 		}
 		return new FeatureGroup(layers);
 
@@ -18854,6 +19515,12 @@ function geometryToLayer(geojson, options) {
 	}
 }
 
+function _pointToLayer(pointToLayerFn, geojson, latlng, options) {
+	return pointToLayerFn ?
+		pointToLayerFn(geojson, latlng) :
+		new Marker(latlng, options && options.markersInheritOptions && options);
+}
+
 // @function coordsToLatLng(coords: Array): LatLng
 // Creates a `LatLng` object from an array of 2 numbers (longitude, latitude)
 // or 3 numbers (longitude, latitude, altitude) used in GeoJSON for points.
@@ -18870,8 +19537,8 @@ function coordsToLatLngs(coords, levelsDeep, _coordsToLatLng) {
 
 	for (var i = 0, len = coords.length, latlng; i < len; i++) {
 		latlng = levelsDeep ?
-				coordsToLatLngs(coords[i], levelsDeep - 1, _coordsToLatLng) :
-				(_coordsToLatLng || coordsToLatLng)(coords[i]);
+			coordsToLatLngs(coords[i], levelsDeep - 1, _coordsToLatLng) :
+			(_coordsToLatLng || coordsToLatLng)(coords[i]);
 
 		latlngs.push(latlng);
 	}
@@ -18884,8 +19551,8 @@ function coordsToLatLngs(coords, levelsDeep, _coordsToLatLng) {
 function latLngToCoords(latlng, precision) {
 	precision = typeof precision === 'number' ? precision : 6;
 	return latlng.alt !== undefined ?
-			[formatNum(latlng.lng, precision), formatNum(latlng.lat, precision), formatNum(latlng.alt, precision)] :
-			[formatNum(latlng.lng, precision), formatNum(latlng.lat, precision)];
+		[formatNum(latlng.lng, precision), formatNum(latlng.lat, precision), formatNum(latlng.alt, precision)] :
+		[formatNum(latlng.lng, precision), formatNum(latlng.lat, precision)];
 }
 
 // @function latLngsToCoords(latlngs: Array, levelsDeep?: Number, closed?: Boolean): Array
@@ -18909,8 +19576,8 @@ function latLngsToCoords(latlngs, levelsDeep, closed, precision) {
 
 function getFeature(layer, newGeometry) {
 	return layer.feature ?
-			extend({}, layer.feature, {geometry: newGeometry}) :
-			asFeature(newGeometry);
+		extend({}, layer.feature, {geometry: newGeometry}) :
+		asFeature(newGeometry);
 }
 
 // @function asFeature(geojson: Object): Object
@@ -18937,19 +19604,26 @@ var PointToGeoJSON = {
 };
 
 // @namespace Marker
-// @method toGeoJSON(): Object
+// @section Other methods
+// @method toGeoJSON(precision?: Number): Object
+// `precision` is the number of decimal places for coordinates.
+// The default value is 6 places.
 // Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the marker (as a GeoJSON `Point` Feature).
 Marker.include(PointToGeoJSON);
 
 // @namespace CircleMarker
-// @method toGeoJSON(): Object
+// @method toGeoJSON(precision?: Number): Object
+// `precision` is the number of decimal places for coordinates.
+// The default value is 6 places.
 // Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the circle marker (as a GeoJSON `Point` Feature).
 Circle.include(PointToGeoJSON);
 CircleMarker.include(PointToGeoJSON);
 
 
 // @namespace Polyline
-// @method toGeoJSON(): Object
+// @method toGeoJSON(precision?: Number): Object
+// `precision` is the number of decimal places for coordinates.
+// The default value is 6 places.
 // Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the polyline (as a GeoJSON `LineString` or `MultiLineString` Feature).
 Polyline.include({
 	toGeoJSON: function (precision) {
@@ -18965,7 +19639,9 @@ Polyline.include({
 });
 
 // @namespace Polygon
-// @method toGeoJSON(): Object
+// @method toGeoJSON(precision?: Number): Object
+// `precision` is the number of decimal places for coordinates.
+// The default value is 6 places.
 // Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the polygon (as a GeoJSON `Polygon` or `MultiPolygon` Feature).
 Polygon.include({
 	toGeoJSON: function (precision) {
@@ -19001,7 +19677,9 @@ LayerGroup.include({
 		});
 	},
 
-	// @method toGeoJSON(): Object
+	// @method toGeoJSON(precision?: Number): Object
+	// `precision` is the number of decimal places for coordinates.
+	// The default value is 6 places.
 	// Returns a [`GeoJSON`](http://en.wikipedia.org/wiki/GeoJSON) representation of the layer group (as a GeoJSON `FeatureCollection`, `GeometryCollection`, or `MultiPoint`).
 	toGeoJSON: function (precision) {
 
@@ -19048,7 +19726,7 @@ LayerGroup.include({
 // @namespace GeoJSON
 // @factory L.geoJSON(geojson?: Object, options?: GeoJSON options)
 // Creates a GeoJSON layer. Optionally accepts an object in
-// [GeoJSON format](http://geojson.org/geojson-spec.html) to display on the map
+// [GeoJSON format](https://tools.ietf.org/html/rfc7946) to display on the map
 // (you can alternatively add it later with `addData` method) and an `options` object.
 function geoJSON(geojson, options) {
 	return new GeoJSON(geojson, options);
@@ -19090,8 +19768,10 @@ var ImageOverlay = Layer.extend({
 		// If `true`, the image overlay will emit [mouse events](#interactive-layer) when clicked or hovered.
 		interactive: false,
 
-		// @option crossOrigin: Boolean = false
-		// If true, the image will have its crossOrigin attribute set to ''. This is needed if you want to access image pixel data.
+		// @option crossOrigin: Boolean|String = false
+		// Whether the crossOrigin attribute will be added to the image.
+		// If a String is provided, the image will have its crossOrigin attribute set to the String provided. This is needed if you want to access image pixel data.
+		// Refer to [CORS Settings](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes) for valid String values.
 		crossOrigin: false,
 
 		// @option errorOverlayUrl: String = ''
@@ -19099,12 +19779,12 @@ var ImageOverlay = Layer.extend({
 		errorOverlayUrl: '',
 
 		// @option zIndex: Number = 1
-		// The explicit [zIndex](https://developer.mozilla.org/docs/Web/CSS/CSS_Positioning/Understanding_z_index) of the tile layer.
+		// The explicit [zIndex](https://developer.mozilla.org/docs/Web/CSS/CSS_Positioning/Understanding_z_index) of the overlay layer.
 		zIndex: 1,
 
 		// @option className: String = ''
 		// A custom class name to assign to the image. Empty by default.
-		className: '',
+		className: ''
 	},
 
 	initialize: function (url, bounds, options) { // (String, LatLngBounds, Object)
@@ -19210,7 +19890,7 @@ var ImageOverlay = Layer.extend({
 		return events;
 	},
 
-	// @method: setZIndex(value: Number) : this
+	// @method setZIndex(value: Number): this
 	// Changes the [zIndex](#imageoverlay-zindex) of the image overlay.
 	setZIndex: function (value) {
 		this.options.zIndex = value;
@@ -19232,9 +19912,12 @@ var ImageOverlay = Layer.extend({
 	},
 
 	_initImage: function () {
-		var img = this._image = create$1('img',
-				'leaflet-image-layer ' + (this._zoomAnimated ? 'leaflet-zoom-animated' : '') +
-				 (this.options.className || ''));
+		var wasElementSupplied = this._url.tagName === 'IMG';
+		var img = this._image = wasElementSupplied ? this._url : create$1('img');
+
+		addClass(img, 'leaflet-image-layer');
+		if (this._zoomAnimated) { addClass(img, 'leaflet-zoom-animated'); }
+		if (this.options.className) { addClass(img, this.options.className); }
 
 		img.onselectstart = falseFn;
 		img.onmousemove = falseFn;
@@ -19244,12 +19927,17 @@ var ImageOverlay = Layer.extend({
 		img.onload = bind(this.fire, this, 'load');
 		img.onerror = bind(this._overlayOnError, this, 'error');
 
-		if (this.options.crossOrigin) {
-			img.crossOrigin = '';
+		if (this.options.crossOrigin || this.options.crossOrigin === '') {
+			img.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
 		}
 
 		if (this.options.zIndex) {
 			this._updateZIndex();
+		}
+
+		if (wasElementSupplied) {
+			this._url = img.src;
+			return;
 		}
 
 		img.src = this._url;
@@ -19288,7 +19976,7 @@ var ImageOverlay = Layer.extend({
 
 	_overlayOnError: function () {
 		// @event error: Event
-		// Fired when the ImageOverlay layer has loaded its image
+		// Fired when the ImageOverlay layer fails to load its image
 		this.fire('error');
 
 		var errorUrl = this.options.errorOverlayUrl;
@@ -19321,7 +20009,7 @@ var imageOverlay = function (url, bounds, options) {
  * ```js
  * var videoUrl = 'https://www.mapbox.com/bites/00188/patricia_nasa.webm',
  * 	videoBounds = [[ 32, -130], [ 13, -100]];
- * L.VideoOverlay(videoUrl, videoBounds ).addTo(map);
+ * L.videoOverlay(videoUrl, videoBounds ).addTo(map);
  * ```
  */
 
@@ -19336,15 +20024,21 @@ var VideoOverlay = ImageOverlay.extend({
 
 		// @option loop: Boolean = true
 		// Whether the video will loop back to the beginning when played.
-		loop: true
+		loop: true,
+
+		// @option keepAspectRatio: Boolean = true
+		// Whether the video will save aspect ratio after the projection.
+		// Relevant for supported browsers. Browser compatibility- https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
+		keepAspectRatio: true
 	},
 
 	_initImage: function () {
 		var wasElementSupplied = this._url.tagName === 'VIDEO';
 		var vid = this._image = wasElementSupplied ? this._url : create$1('video');
 
-		vid.class = vid.class || '';
-		vid.class += 'leaflet-image-layer ' + (this._zoomAnimated ? 'leaflet-zoom-animated' : '');
+		addClass(vid, 'leaflet-image-layer');
+		if (this._zoomAnimated) { addClass(vid, 'leaflet-zoom-animated'); }
+		if (this.options.className) { addClass(vid, this.options.className); }
 
 		vid.onselectstart = falseFn;
 		vid.onmousemove = falseFn;
@@ -19353,10 +20047,20 @@ var VideoOverlay = ImageOverlay.extend({
 		// Fired when the video has finished loading the first frame
 		vid.onloadeddata = bind(this.fire, this, 'load');
 
-		if (wasElementSupplied) { return; }
+		if (wasElementSupplied) {
+			var sourceElements = vid.getElementsByTagName('source');
+			var sources = [];
+			for (var j = 0; j < sourceElements.length; j++) {
+				sources.push(sourceElements[j].src);
+			}
+
+			this._url = (sourceElements.length > 0) ? sources : [vid.src];
+			return;
+		}
 
 		if (!isArray(this._url)) { this._url = [this._url]; }
 
+		if (!this.options.keepAspectRatio && vid.style.hasOwnProperty('objectFit')) { vid.style['objectFit'] = 'fill'; }
 		vid.autoplay = !!this.options.autoplay;
 		vid.loop = !!this.options.loop;
 		for (var i = 0; i < this._url.length; i++) {
@@ -19378,6 +20082,53 @@ var VideoOverlay = ImageOverlay.extend({
 
 function videoOverlay(video, bounds, options) {
 	return new VideoOverlay(video, bounds, options);
+}
+
+/*
+ * @class SVGOverlay
+ * @aka L.SVGOverlay
+ * @inherits ImageOverlay
+ *
+ * Used to load, display and provide DOM access to an SVG file over specific bounds of the map. Extends `ImageOverlay`.
+ *
+ * An SVG overlay uses the [`<svg>`](https://developer.mozilla.org/docs/Web/SVG/Element/svg) element.
+ *
+ * @example
+ *
+ * ```js
+ * var svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+ * svgElement.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+ * svgElement.setAttribute('viewBox', "0 0 200 200");
+ * svgElement.innerHTML = '<rect width="200" height="200"/><rect x="75" y="23" width="50" height="50" style="fill:red"/><rect x="75" y="123" width="50" height="50" style="fill:#0013ff"/>';
+ * var svgElementBounds = [ [ 32, -130 ], [ 13, -100 ] ];
+ * L.svgOverlay(svgElement, svgElementBounds).addTo(map);
+ * ```
+ */
+
+var SVGOverlay = ImageOverlay.extend({
+	_initImage: function () {
+		var el = this._image = this._url;
+
+		addClass(el, 'leaflet-image-layer');
+		if (this._zoomAnimated) { addClass(el, 'leaflet-zoom-animated'); }
+		if (this.options.className) { addClass(el, this.options.className); }
+
+		el.onselectstart = falseFn;
+		el.onmousemove = falseFn;
+	}
+
+	// @method getElement(): SVGElement
+	// Returns the instance of [`SVGElement`](https://developer.mozilla.org/docs/Web/API/SVGElement)
+	// used by this overlay.
+});
+
+
+// @factory L.svgOverlay(svg: String|SVGElement, bounds: LatLngBounds, options?: SVGOverlay options)
+// Instantiates an image overlay object given an SVG element and the geographical bounds it is tied to.
+// A viewBox attribute is required on the SVG element to zoom in and out properly.
+
+function svgOverlay(el, bounds, options) {
+	return new SVGOverlay(el, bounds, options);
 }
 
 /*
@@ -19534,6 +20285,38 @@ var DivOverlay = Layer.extend({
 		return this;
 	},
 
+	_prepareOpen: function (parent, layer, latlng) {
+		if (!(layer instanceof Layer)) {
+			latlng = layer;
+			layer = parent;
+		}
+
+		if (layer instanceof FeatureGroup) {
+			for (var id in parent._layers) {
+				layer = parent._layers[id];
+				break;
+			}
+		}
+
+		if (!latlng) {
+			if (layer.getCenter) {
+				latlng = layer.getCenter();
+			} else if (layer.getLatLng) {
+				latlng = layer.getLatLng();
+			} else {
+				throw new Error('Unable to get source layer LatLng.');
+			}
+		}
+
+		// set overlay source to this layer
+		this._source = layer;
+
+		// update the overlay (content, layout, ect...)
+		this.update();
+
+		return latlng;
+	},
+
 	_updateContent: function () {
 		if (!this._content) { return; }
 
@@ -19656,6 +20439,11 @@ var Popup = DivOverlay.extend({
 		// Set it to `false` if you want to override the default behavior of
 		// the popup closing when another popup is opened.
 		autoClose: true,
+
+		// @option closeOnEscapeKey: Boolean = true
+		// Set it to `false` if you want to override the default behavior of
+		// the ESC key for closing of the popup.
+		closeOnEscapeKey: true,
 
 		// @option closeOnClick: Boolean = *
 		// Set it if you want to override the default behavior of the popup closing when user clicks
@@ -19800,7 +20588,8 @@ var Popup = DivOverlay.extend({
 	},
 
 	_adjustPan: function () {
-		if (!this.options.autoPan || (this._map._panAnim && this._map._panAnim._inProgress)) { return; }
+		if (!this.options.autoPan) { return; }
+		if (this._map._panAnim) { this._map._panAnim.stop(); }
 
 		var map = this._map,
 		    marginBottom = parseInt(getStyle(this._container, 'marginBottom'), 10) || 0,
@@ -19980,30 +20769,10 @@ Layer.include({
 	},
 
 	// @method openPopup(latlng?: LatLng): this
-	// Opens the bound popup at the specificed `latlng` or at the default popup anchor if no `latlng` is passed.
+	// Opens the bound popup at the specified `latlng` or at the default popup anchor if no `latlng` is passed.
 	openPopup: function (layer, latlng) {
-		if (!(layer instanceof Layer)) {
-			latlng = layer;
-			layer = this;
-		}
-
-		if (layer instanceof FeatureGroup) {
-			for (var id in this._layers) {
-				layer = this._layers[id];
-				break;
-			}
-		}
-
-		if (!latlng) {
-			latlng = layer.getCenter ? layer.getCenter() : layer.getLatLng();
-		}
-
 		if (this._popup && this._map) {
-			// set popup source to this layer
-			this._popup._source = layer;
-
-			// update the popup (content, layout, ect...)
-			this._popup.update();
+			latlng = this._popup._prepareOpen(this, layer, latlng);
 
 			// open the popup on the map
 			this._map.openPopup(this._popup, latlng);
@@ -20108,7 +20877,7 @@ Layer.include({
  * marker.bindTooltip("my tooltip text").openTooltip();
  * ```
  * Note about tooltip offset. Leaflet takes two options in consideration
- * for computing tooltip offseting:
+ * for computing tooltip offsetting:
  * - the `offset` Tooltip option: it defaults to [0, 0], and it's specific to one tooltip.
  *   Add a positive x offset to move the tooltip to the right, and a positive y offset to
  *   move it to the bottom. Negatives will move to the left and top.
@@ -20134,7 +20903,7 @@ var Tooltip = DivOverlay.extend({
 		// @option direction: String = 'auto'
 		// Direction where to open the tooltip. Possible values are: `right`, `left`,
 		// `top`, `bottom`, `center`, `auto`.
-		// `auto` will dynamicaly switch between `right` and `left` according to the tooltip
+		// `auto` will dynamically switch between `right` and `left` according to the tooltip
 		// position on the map.
 		direction: 'auto',
 
@@ -20398,31 +21167,10 @@ Layer.include({
 	},
 
 	// @method openTooltip(latlng?: LatLng): this
-	// Opens the bound tooltip at the specificed `latlng` or at the default tooltip anchor if no `latlng` is passed.
+	// Opens the bound tooltip at the specified `latlng` or at the default tooltip anchor if no `latlng` is passed.
 	openTooltip: function (layer, latlng) {
-		if (!(layer instanceof Layer)) {
-			latlng = layer;
-			layer = this;
-		}
-
-		if (layer instanceof FeatureGroup) {
-			for (var id in this._layers) {
-				layer = this._layers[id];
-				break;
-			}
-		}
-
-		if (!latlng) {
-			latlng = layer.getCenter ? layer.getCenter() : layer.getLatLng();
-		}
-
 		if (this._tooltip && this._map) {
-
-			// set tooltip source to this layer
-			this._tooltip._source = layer;
-
-			// update the tooltip (content, layout, ect...)
-			this._tooltip.update();
+			latlng = this._tooltip._prepareOpen(this, layer, latlng);
 
 			// open the tooltip on the map
 			this._map.openTooltip(this._tooltip, latlng);
@@ -20533,8 +21281,9 @@ var DivIcon = Icon.extend({
 		// iconAnchor: (Point),
 		// popupAnchor: (Point),
 
-		// @option html: String = ''
-		// Custom HTML code to put inside the div element, empty by default.
+		// @option html: String|HTMLElement = ''
+		// Custom HTML code to put inside the div element, empty by default. Alternatively,
+		// an instance of `HTMLElement`.
 		html: false,
 
 		// @option bgPos: Point = [0, 0]
@@ -20548,7 +21297,12 @@ var DivIcon = Icon.extend({
 		var div = (oldIcon && oldIcon.tagName === 'DIV') ? oldIcon : document.createElement('div'),
 		    options = this.options;
 
-		div.innerHTML = options.html !== false ? options.html : '';
+		if (options.html instanceof Element) {
+			empty(div);
+			div.appendChild(options.html);
+		} else {
+			div.innerHTML = options.html !== false ? options.html : '';
+		}
 
 		if (options.bgPos) {
 			var bgPos = toPoint(options.bgPos);
@@ -20738,7 +21492,7 @@ var GridLayer = Layer.extend({
 		remove(this._container);
 		map._removeZoomLimit(this);
 		this._container = null;
-		this._tileZoom = null;
+		this._tileZoom = undefined;
 	},
 
 	// @method bringToFront: this
@@ -20827,7 +21581,7 @@ var GridLayer = Layer.extend({
 	// @section Extension methods
 	// Layers extending `GridLayer` shall reimplement the following method.
 	// @method createTile(coords: Object, done?: Function): HTMLElement
-	// Called only internally, must be overriden by classes extending `GridLayer`.
+	// Called only internally, must be overridden by classes extending `GridLayer`.
 	// Returns the `HTMLElement` corresponding to the given `coords`. If the `done` callback
 	// is specified, it must be called when the tile has finished loading and drawing.
 	createTile: function () {
@@ -21032,7 +21786,7 @@ var GridLayer = Layer.extend({
 		}
 		this._removeAllTiles();
 
-		this._tileZoom = null;
+		this._tileZoom = undefined;
 	},
 
 	_retainParent: function (x, y, z, minZoom) {
@@ -21242,7 +21996,10 @@ var GridLayer = Layer.extend({
 
 				if (!this._isValidTile(coords)) { continue; }
 
-				if (!this._tiles[this._tileCoordsToKey(coords)]) {
+				var tile = this._tiles[this._tileCoordsToKey(coords)];
+				if (tile) {
+					tile.current = true;
+				} else {
 					queue.push(coords);
 				}
 			}
@@ -21294,26 +22051,26 @@ var GridLayer = Layer.extend({
 		return this._tileCoordsToBounds(this._keyToTileCoords(key));
 	},
 
-	// converts tile coordinates to its geographical bounds
-	_tileCoordsToBounds: function (coords) {
-
+	_tileCoordsToNwSe: function (coords) {
 		var map = this._map,
 		    tileSize = this.getTileSize(),
-
 		    nwPoint = coords.scaleBy(tileSize),
 		    sePoint = nwPoint.add(tileSize),
-
 		    nw = map.unproject(nwPoint, coords.z),
-		    se = map.unproject(sePoint, coords.z),
-		    bounds = new LatLngBounds(nw, se);
-
-		if (!this.options.noWrap) {
-			map.wrapLatLngBounds(bounds);
-		}
-
-		return bounds;
+		    se = map.unproject(sePoint, coords.z);
+		return [nw, se];
 	},
 
+	// converts tile coordinates to its geographical bounds
+	_tileCoordsToBounds: function (coords) {
+		var bp = this._tileCoordsToNwSe(coords),
+		    bounds = new LatLngBounds(bp[0], bp[1]);
+
+		if (!this.options.noWrap) {
+			bounds = this._map.wrapLatLngBounds(bounds);
+		}
+		return bounds;
+	},
 	// converts tile coordinates to key for the tile cache
 	_tileCoordsToKey: function (coords) {
 		return coords.x + ':' + coords.y + ':' + coords.z;
@@ -21399,8 +22156,6 @@ var GridLayer = Layer.extend({
 	},
 
 	_tileReady: function (coords, err, tile) {
-		if (!this._map) { return; }
-
 		if (err) {
 			// @event tileerror: TileErrorEvent
 			// Fired when there is an error loading a tile.
@@ -21490,12 +22245,12 @@ function gridLayer(options) {
  * @class TileLayer
  * @inherits GridLayer
  * @aka L.TileLayer
- * Used to load and display tile layers on the map. Extends `GridLayer`.
+ * Used to load and display tile layers on the map. Note that most tile servers require attribution, which you can set under `Layer`. Extends `GridLayer`.
  *
  * @example
  *
  * ```js
- * L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar'}).addTo(map);
+ * L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map);
  * ```
  *
  * @section URL template
@@ -21554,8 +22309,10 @@ var TileLayer = GridLayer.extend({
 		// If `true` and user is on a retina display, it will request four tiles of half the specified size and a bigger zoom level in place of one to utilize the high resolution.
 		detectRetina: false,
 
-		// @option crossOrigin: Boolean = false
-		// If true, all tiles will have their crossOrigin attribute set to ''. This is needed if you want to access tile pixel data.
+		// @option crossOrigin: Boolean|String = false
+		// Whether the crossOrigin attribute will be added to the tiles.
+		// If a String is provided, all tiles will have their crossOrigin attribute set to the String provided. This is needed if you want to access tile pixel data.
+		// Refer to [CORS Settings](https://developer.mozilla.org/en-US/docs/Web/HTML/CORS_settings_attributes) for valid String values.
 		crossOrigin: false
 	},
 
@@ -21593,7 +22350,13 @@ var TileLayer = GridLayer.extend({
 
 	// @method setUrl(url: String, noRedraw?: Boolean): this
 	// Updates the layer's URL template and redraws it (unless `noRedraw` is set to `true`).
+	// If the URL does not change, the layer will not be redrawn unless
+	// the noRedraw parameter is set to false.
 	setUrl: function (url, noRedraw) {
+		if (this._url === url && noRedraw === undefined) {
+			noRedraw = true;
+		}
+
 		this._url = url;
 
 		if (!noRedraw) {
@@ -21604,7 +22367,7 @@ var TileLayer = GridLayer.extend({
 
 	// @method createTile(coords: Object, done?: Function): HTMLElement
 	// Called only internally, overrides GridLayer's [`createTile()`](#gridlayer-createtile)
-	// to return an `<img>` HTML element with the appropiate image URL given `coords`. The `done`
+	// to return an `<img>` HTML element with the appropriate image URL given `coords`. The `done`
 	// callback is called when the tile has been loaded.
 	createTile: function (coords, done) {
 		var tile = document.createElement('img');
@@ -21612,8 +22375,8 @@ var TileLayer = GridLayer.extend({
 		on(tile, 'load', bind(this._tileOnLoad, this, done, tile));
 		on(tile, 'error', bind(this._tileOnError, this, done, tile));
 
-		if (this.options.crossOrigin) {
-			tile.crossOrigin = '';
+		if (this.options.crossOrigin || this.options.crossOrigin === '') {
+			tile.crossOrigin = this.options.crossOrigin === true ? '' : this.options.crossOrigin;
 		}
 
 		/*
@@ -21669,7 +22432,7 @@ var TileLayer = GridLayer.extend({
 
 	_tileOnError: function (done, tile, e) {
 		var errorUrl = this.options.errorTileUrl;
-		if (errorUrl && tile.src !== errorUrl) {
+		if (errorUrl && tile.getAttribute('src') !== errorUrl) {
 			tile.src = errorUrl;
 		}
 		done(e, tile);
@@ -21710,9 +22473,32 @@ var TileLayer = GridLayer.extend({
 				if (!tile.complete) {
 					tile.src = emptyImageUrl;
 					remove(tile);
+					delete this._tiles[i];
 				}
 			}
 		}
+	},
+
+	_removeTile: function (key) {
+		var tile = this._tiles[key];
+		if (!tile) { return; }
+
+		// Cancels any pending http requests associated with the tile
+		// unless we're on Android's stock browser,
+		// see https://github.com/Leaflet/Leaflet/issues/137
+		if (!androidStock) {
+			tile.el.setAttribute('src', emptyImageUrl);
+		}
+
+		return GridLayer.prototype._removeTile.call(this, key);
+	},
+
+	_tileReady: function (coords, err, tile) {
+		if (!this._map || (tile && tile.getAttribute('src') === emptyImageUrl)) {
+			return;
+		}
+
+		return GridLayer.prototype._tileReady.call(this, coords, err, tile);
 	}
 });
 
@@ -21800,7 +22586,10 @@ var TileLayerWMS = TileLayer.extend({
 
 		options = setOptions(this, options);
 
-		wmsParams.width = wmsParams.height = options.tileSize * (options.detectRetina && retina ? 2 : 1);
+		var realRetina = options.detectRetina && retina ? 2 : 1;
+		var tileSize = this.getTileSize();
+		wmsParams.width = tileSize.x * realRetina;
+		wmsParams.height = tileSize.y * realRetina;
 
 		this.wmsParams = wmsParams;
 	},
@@ -21818,16 +22607,15 @@ var TileLayerWMS = TileLayer.extend({
 
 	getTileUrl: function (coords) {
 
-		var tileBounds = this._tileCoordsToBounds(coords),
-		    nw = this._crs.project(tileBounds.getNorthWest()),
-		    se = this._crs.project(tileBounds.getSouthEast()),
-
+		var tileBounds = this._tileCoordsToNwSe(coords),
+		    crs = this._crs,
+		    bounds = toBounds(crs.project(tileBounds[0]), crs.project(tileBounds[1])),
+		    min = bounds.min,
+		    max = bounds.max,
 		    bbox = (this._wmsVersion >= 1.3 && this._crs === EPSG4326 ?
-			    [se.y, nw.x, nw.y, se.x] :
-			    [nw.x, se.y, se.x, nw.y]).join(','),
-
+		    [min.y, min.x, max.y, max.x] :
+		    [min.x, min.y, max.x, max.y]).join(','),
 		    url = TileLayer.prototype.getTileUrl.call(this, coords);
-
 		return url +
 			getParamString(this.wmsParams, url, this.options.uppercase) +
 			(this.options.uppercase ? '&BBOX=' : '&bbox=') + bbox;
@@ -21885,7 +22673,11 @@ var Renderer = Layer.extend({
 		// @option padding: Number = 0.1
 		// How much to extend the clip area around the map view (relative to its size)
 		// e.g. 0.1 would be 10% of map view in each direction
-		padding: 0.1
+		padding: 0.1,
+
+		// @option tolerance: Number = 0
+		// How much to extend click tolerance round a path/object on the map
+		tolerance : 0
 	},
 
 	initialize: function (options) {
@@ -22041,7 +22833,7 @@ var Canvas = Renderer.extend({
 	_initContainer: function () {
 		var container = this._container = document.createElement('canvas');
 
-		on(container, 'mousemove', throttle(this._onMouseMove, 32, this), this);
+		on(container, 'mousemove', this._onMouseMove, this);
 		on(container, 'click dblclick mousedown mouseup contextmenu', this._onClick, this);
 		on(container, 'mouseout', this._handleMouseOut, this);
 
@@ -22049,6 +22841,7 @@ var Canvas = Renderer.extend({
 	},
 
 	_destroyContainer: function () {
+		cancelAnimFrame(this._redrawRequest);
 		delete this._ctx;
 		remove(this._container);
 		off(this._container);
@@ -22069,8 +22862,6 @@ var Canvas = Renderer.extend({
 
 	_update: function () {
 		if (this._map._animatingZoom && this._bounds) { return; }
-
-		this._drawnLayers = {};
 
 		Renderer.prototype._update.call(this);
 
@@ -22143,7 +22934,7 @@ var Canvas = Renderer.extend({
 
 		delete layer._order;
 
-		delete this._layers[L.stamp(layer)];
+		delete this._layers[stamp(layer)];
 
 		this._requestRedraw(layer);
 	},
@@ -22165,14 +22956,20 @@ var Canvas = Renderer.extend({
 	},
 
 	_updateDashArray: function (layer) {
-		if (layer.options.dashArray) {
-			var parts = layer.options.dashArray.split(','),
+		if (typeof layer.options.dashArray === 'string') {
+			var parts = layer.options.dashArray.split(/[, ]+/),
 			    dashArray = [],
+			    dashValue,
 			    i;
 			for (i = 0; i < parts.length; i++) {
-				dashArray.push(Number(parts[i]));
+				dashValue = Number(parts[i]);
+				// Ignore dash array containing invalid lengths
+				if (isNaN(dashValue)) { return; }
+				dashArray.push(dashValue);
 			}
 			layer.options._dashArray = dashArray;
+		} else {
+			layer.options._dashArray = layer.options.dashArray;
 		}
 	},
 
@@ -22250,8 +23047,6 @@ var Canvas = Renderer.extend({
 
 		if (!len) { return; }
 
-		this._drawnLayers[layer._leaflet_id] = layer;
-
 		ctx.beginPath();
 
 		for (i = 0; i < len; i++) {
@@ -22275,10 +23070,8 @@ var Canvas = Renderer.extend({
 
 		var p = layer._point,
 		    ctx = this._ctx,
-		    r = layer._radius,
-		    s = (layer._radiusY || r) / r;
-
-		this._drawnLayers[layer._leaflet_id] = layer;
+		    r = Math.max(Math.round(layer._radius), 1),
+		    s = (Math.max(Math.round(layer._radiusY), 1) || r) / r;
 
 		if (s !== 1) {
 			ctx.save();
@@ -22350,10 +23143,15 @@ var Canvas = Renderer.extend({
 			removeClass(this._container, 'leaflet-interactive');
 			this._fireEvent([layer], e, 'mouseout');
 			this._hoveredLayer = null;
+			this._mouseHoverThrottled = false;
 		}
 	},
 
 	_handleMouseHover: function (e, point) {
+		if (this._mouseHoverThrottled) {
+			return;
+		}
+
 		var layer, candidateHoveredLayer;
 
 		for (var order = this._drawFirst; order; order = order.next) {
@@ -22376,6 +23174,11 @@ var Canvas = Renderer.extend({
 		if (this._hoveredLayer) {
 			this._fireEvent([this._hoveredLayer], e);
 		}
+
+		this._mouseHoverThrottled = true;
+		setTimeout(L.bind(function () {
+			this._mouseHoverThrottled = false;
+		}, this), 32);
 	},
 
 	_fireEvent: function (layers, e, type) {
@@ -22384,6 +23187,9 @@ var Canvas = Renderer.extend({
 
 	_bringToFront: function (layer) {
 		var order = layer._order;
+
+		if (!order) { return; }
+
 		var next = order.next;
 		var prev = order.prev;
 
@@ -22397,7 +23203,7 @@ var Canvas = Renderer.extend({
 			prev.next = next;
 		} else if (next) {
 			// Update first entry unless this is the
-			// signle entry
+			// single entry
 			this._drawFirst = next;
 		}
 
@@ -22412,6 +23218,9 @@ var Canvas = Renderer.extend({
 
 	_bringToBack: function (layer) {
 		var order = layer._order;
+
+		if (!order) { return; }
+
 		var next = order.next;
 		var prev = order.prev;
 
@@ -22425,7 +23234,7 @@ var Canvas = Renderer.extend({
 			next.prev = prev;
 		} else if (prev) {
 			// Update last entry unless this is the
-			// signle entry
+			// single entry
 			this._drawLast = prev;
 		}
 
@@ -22467,7 +23276,6 @@ var vmlCreate = (function () {
 /*
  * @class SVG
  *
- * Although SVG is not available on IE7 and IE8, these browsers support [VML](https://en.wikipedia.org/wiki/Vector_Markup_Language), and the SVG renderer will fall back to VML in this case.
  *
  * VML was deprecated in 2012, which means VML functionality exists only for backwards compatibility
  * with old versions of Internet Explorer.
@@ -22569,7 +23377,7 @@ var vmlMixin = {
 		    r2 = Math.round(layer._radiusY || r);
 
 		this._setPath(layer, layer._empty() ? 'M0 0' :
-				'AL ' + p.x + ',' + p.y + ' ' + r + ',' + r2 + ' 0,' + (65535 * 360));
+			'AL ' + p.x + ',' + p.y + ' ' + r + ',' + r2 + ' 0,' + (65535 * 360));
 	},
 
 	_setPath: function (layer, path) {
@@ -22646,6 +23454,7 @@ var SVG = Renderer.extend({
 		off(this._container);
 		delete this._container;
 		delete this._rootGroup;
+		delete this._svgSize;
 	},
 
 	_onZoomStart: function () {
@@ -22758,15 +23567,15 @@ var SVG = Renderer.extend({
 
 	_updateCircle: function (layer) {
 		var p = layer._point,
-		    r = layer._radius,
-		    r2 = layer._radiusY || r,
+		    r = Math.max(Math.round(layer._radius), 1),
+		    r2 = Math.max(Math.round(layer._radiusY), 1) || r,
 		    arc = 'a' + r + ',' + r2 + ' 0 1,0 ';
 
 		// drawing a circle with two half-arcs
 		var d = layer._empty() ? 'M0 0' :
-				'M' + (p.x - r) + ',' + p.y +
-				arc + (r * 2) + ',0 ' +
-				arc + (-r * 2) + ',0 ';
+			'M' + (p.x - r) + ',' + p.y +
+			arc + (r * 2) + ',0 ' +
+			arc + (-r * 2) + ',0 ';
 
 		this._setPath(layer, d);
 	},
@@ -22789,6 +23598,7 @@ if (vml) {
 	SVG.include(vmlMixin);
 }
 
+// @namespace SVG
 // @factory L.svg(options?: Renderer options)
 // Creates a SVG renderer with the given options.
 function svg$1(options) {
@@ -22807,10 +23617,7 @@ Map.include({
 		var renderer = layer.options.renderer || this._getPaneRenderer(layer.options.pane) || this.options.renderer || this._renderer;
 
 		if (!renderer) {
-			// @namespace Map; @option preferCanvas: Boolean = false
-			// Whether `Path`s should be rendered on a `Canvas` renderer.
-			// By default, all `Path`s are rendered in a `SVG` renderer.
-			renderer = this._renderer = (this.options.preferCanvas && canvas$1()) || svg$1();
+			renderer = this._renderer = this._createRenderer();
 		}
 
 		if (!this.hasLayer(renderer)) {
@@ -22826,10 +23633,17 @@ Map.include({
 
 		var renderer = this._paneRenderers[name];
 		if (renderer === undefined) {
-			renderer = (SVG && svg$1({pane: name})) || (Canvas && canvas$1({pane: name}));
+			renderer = this._createRenderer({pane: name});
 			this._paneRenderers[name] = renderer;
 		}
 		return renderer;
+	},
+
+	_createRenderer: function (options) {
+		// @namespace Map; @option preferCanvas: Boolean = false
+		// Whether `Path`s should be rendered on a `Canvas` renderer.
+		// By default, all `Path`s are rendered in a `SVG` renderer.
+		return (this.options.preferCanvas && canvas$1(options)) || svg$1(options);
 	}
 });
 
@@ -22839,7 +23653,7 @@ Map.include({
 
 /*
  * @class Rectangle
- * @aka L.Retangle
+ * @aka L.Rectangle
  * @inherits Polygon
  *
  * A class for drawing rectangle overlays on a map. Extends `Polygon`.
@@ -23217,15 +24031,19 @@ var Drag = Handler.extend({
 			this._positions.push(pos);
 			this._times.push(time);
 
-			if (time - this._times[0] > 50) {
-				this._positions.shift();
-				this._times.shift();
-			}
+			this._prunePositions(time);
 		}
 
 		this._map
 		    .fire('move', e)
 		    .fire('drag', e);
+	},
+
+	_prunePositions: function (time) {
+		while (this._positions.length > 1 && time - this._times[0] > 50) {
+			this._positions.shift();
+			this._times.shift();
+		}
 	},
 
 	_onZoomEnd: function () {
@@ -23280,6 +24098,7 @@ var Drag = Handler.extend({
 			map.fire('moveend');
 
 		} else {
+			this._prunePositions(+new Date());
 
 			var direction = this._lastPos.subtract(this._positions[0]),
 			    duration = (this._lastTime - this._times[0]) / 1000,
@@ -23459,24 +24278,22 @@ var Keyboard = Handler.extend({
 		    offset;
 
 		if (key in this._panKeys) {
+			if (!map._panAnim || !map._panAnim._inProgress) {
+				offset = this._panKeys[key];
+				if (e.shiftKey) {
+					offset = toPoint(offset).multiplyBy(3);
+				}
 
-			if (map._panAnim && map._panAnim._inProgress) { return; }
+				map.panBy(offset);
 
-			offset = this._panKeys[key];
-			if (e.shiftKey) {
-				offset = toPoint(offset).multiplyBy(3);
+				if (map.options.maxBounds) {
+					map.panInsideBounds(map.options.maxBounds);
+				}
 			}
-
-			map.panBy(offset);
-
-			if (map.options.maxBounds) {
-				map.panInsideBounds(map.options.maxBounds);
-			}
-
 		} else if (key in this._zoomKeys) {
 			map.setZoom(map.getZoom() + (e.shiftKey ? 3 : 1) * this._zoomKeys[key]);
 
-		} else if (key === 27 && map._popup) {
+		} else if (key === 27 && map._popup && map._popup.options.closeOnEscapeKey) {
 			map.closePopup();
 
 		} else {
@@ -23794,7 +24611,7 @@ var TouchZoom = Handler.extend({
 		}
 
 		if (!this._moved) {
-			map._moveStart(true);
+			map._moveStart(true, false);
 			this._moved = true;
 		}
 
@@ -23840,21 +24657,9 @@ Map.ScrollWheelZoom = ScrollWheelZoom;
 Map.Tap = Tap;
 Map.TouchZoom = TouchZoom;
 
-// misc
-
-var oldL = window.L;
-function noConflict() {
-	window.L = oldL;
-	return this;
-}
-
-// Always export us to window global (see #2364)
-window.L = exports;
-
 Object.freeze = freeze;
 
 exports.version = version;
-exports.noConflict = noConflict;
 exports.Control = Control;
 exports.control = control;
 exports.Browser = Browser;
@@ -23897,6 +24702,8 @@ exports.ImageOverlay = ImageOverlay;
 exports.imageOverlay = imageOverlay;
 exports.VideoOverlay = VideoOverlay;
 exports.videoOverlay = videoOverlay;
+exports.SVGOverlay = SVGOverlay;
+exports.svgOverlay = svgOverlay;
 exports.DivOverlay = DivOverlay;
 exports.Popup = Popup;
 exports.popup = popup;
@@ -23931,1306 +24738,18 @@ exports.rectangle = rectangle;
 exports.Map = Map;
 exports.map = createMap;
 
+var oldL = window.L;
+exports.noConflict = function() {
+	window.L = oldL;
+	return this;
+}
+
+// Always export us to window global (see #2364)
+window.L = exports;
+
 })));
 //# sourceMappingURL=leaflet-src.js.map
 
-;
-// Device.js
-// (c) 2014 Matthew Hudson
-// Device.js is freely distributable under the MIT license.
-// For all details and documentation:
-// http://matthewhudson.me/projects/device.js/
-
-(function() {
-
-  var device,
-    previousDevice,
-    addClass,
-    documentElement,
-    find,
-    handleOrientation,
-    hasClass,
-    orientationEvent,
-    removeClass,
-    userAgent;
-
-  // Save the previous value of the device variable.
-  previousDevice = window.device;
-
-  device = {};
-
-  // Add device as a global object.
-  window.device = device;
-
-  // The <html> element.
-  documentElement = window.document.documentElement;
-
-  // The client user agent string.
-  // Lowercase, so we can use the more efficient indexOf(), instead of Regex
-  userAgent = window.navigator.userAgent.toLowerCase();
-
-  // Main functions
-  // --------------
-
-  device.ios = function () {
-    return device.iphone() || device.ipod() || device.ipad();
-  };
-
-  device.iphone = function () {
-    return !device.windows() && find('iphone');
-  };
-
-  device.ipod = function () {
-    return find('ipod');
-  };
-
-  device.ipad = function () {
-    return find('ipad');
-  };
-
-  device.android = function () {
-    return !device.windows() && find('android');
-  };
-
-  device.androidPhone = function () {
-    return device.android() && find('mobile');
-  };
-
-  device.androidTablet = function () {
-    return device.android() && !find('mobile');
-  };
-
-  device.blackberry = function () {
-    return find('blackberry') || find('bb10') || find('rim');
-  };
-
-  device.blackberryPhone = function () {
-    return device.blackberry() && !find('tablet');
-  };
-
-  device.blackberryTablet = function () {
-    return device.blackberry() && find('tablet');
-  };
-
-  device.windows = function () {
-    return find('windows');
-  };
-
-  device.windowsPhone = function () {
-    return device.windows() && find('phone');
-  };
-
-  device.windowsTablet = function () {
-    return device.windows() && (find('touch') && !device.windowsPhone());
-  };
-
-  device.fxos = function () {
-    return (find('(mobile;') || find('(tablet;')) && find('; rv:');
-  };
-
-  device.fxosPhone = function () {
-    return device.fxos() && find('mobile');
-  };
-
-  device.fxosTablet = function () {
-    return device.fxos() && find('tablet');
-  };
-
-  device.meego = function () {
-    return find('meego');
-  };
-
-  device.cordova = function () {
-    return window.cordova && location.protocol === 'file:';
-  };
-
-  device.nodeWebkit = function () {
-    return typeof window.process === 'object';
-  };
-
-  device.mobile = function () {
-    return device.androidPhone() || device.iphone() || device.ipod() || device.windowsPhone() || device.blackberryPhone() || device.fxosPhone() || device.meego();
-  };
-
-  device.tablet = function () {
-    return device.ipad() || device.androidTablet() || device.blackberryTablet() || device.windowsTablet() || device.fxosTablet();
-  };
-
-  device.desktop = function () {
-    return !device.tablet() && !device.mobile();
-  };
-
-  device.television = function() {
-    var i, tvString;
-
-    television = [
-      "googletv",
-      "viera",
-      "smarttv",
-      "internet.tv",
-      "netcast",
-      "nettv",
-      "appletv",
-      "boxee",
-      "kylo",
-      "roku",
-      "dlnadoc",
-      "roku",
-      "pov_tv",
-      "hbbtv",
-      "ce-html"
-    ];
-
-    i = 0;
-    while (i < television.length) {
-      if (find(television[i])) {
-        return true;
-      }
-      i++;
-    }
-    return false;
-  };
-
-  device.portrait = function () {
-    return (window.innerHeight / window.innerWidth) > 1;
-  };
-
-  device.landscape = function () {
-    return (window.innerHeight / window.innerWidth) < 1;
-  };
-
-  // Public Utility Functions
-  // ------------------------
-
-  // Run device.js in noConflict mode,
-  // returning the device variable to its previous owner.
-  device.noConflict = function () {
-    window.device = previousDevice;
-    return this;
-  };
-
-  // Private Utility Functions
-  // -------------------------
-
-  // Simple UA string search
-  find = function (needle) {
-    return userAgent.indexOf(needle) !== -1;
-  };
-
-  // Check if documentElement already has a given class.
-  hasClass = function (className) {
-    var regex;
-    regex = new RegExp(className, 'i');
-    return documentElement.className.match(regex);
-  };
-
-  // Add one or more CSS classes to the <html> element.
-  addClass = function (className) {
-    var currentClassNames = null;
-    if (!hasClass(className)) {
-      currentClassNames = documentElement.className.replace(/^\s+|\s+$/g, '');
-      documentElement.className = currentClassNames + " " + className;
-    }
-  };
-
-  // Remove single CSS class from the <html> element.
-  removeClass = function (className) {
-    if (hasClass(className)) {
-      documentElement.className = documentElement.className.replace(" " + className, "");
-    }
-  };
-
-  // HTML Element Handling
-  // ---------------------
-
-  // Insert the appropriate CSS class based on the _user_agent.
-
-  if (device.ios()) {
-    if (device.ipad()) {
-      addClass("ios ipad tablet");
-    } else if (device.iphone()) {
-      addClass("ios iphone mobile");
-    } else if (device.ipod()) {
-      addClass("ios ipod mobile");
-    }
-  } else if (device.android()) {
-    if (device.androidTablet()) {
-      addClass("android tablet");
-    } else {
-      addClass("android mobile");
-    }
-  } else if (device.blackberry()) {
-    if (device.blackberryTablet()) {
-      addClass("blackberry tablet");
-    } else {
-      addClass("blackberry mobile");
-    }
-  } else if (device.windows()) {
-    if (device.windowsTablet()) {
-      addClass("windows tablet");
-    } else if (device.windowsPhone()) {
-      addClass("windows mobile");
-    } else {
-      addClass("desktop");
-    }
-  } else if (device.fxos()) {
-    if (device.fxosTablet()) {
-      addClass("fxos tablet");
-    } else {
-      addClass("fxos mobile");
-    }
-  } else if (device.meego()) {
-    addClass("meego mobile");
-  } else if (device.nodeWebkit()) {
-    addClass("node-webkit");
-  } else if (device.television()) {
-    addClass("television");
-  } else if (device.desktop()) {
-    addClass("desktop");
-  }
-
-  if (device.cordova()) {
-    addClass("cordova");
-  }
-
-  // Orientation Handling
-  // --------------------
-
-  // Handle device orientation changes.
-  handleOrientation = function () {
-    if (device.landscape()) {
-      removeClass("portrait");
-      addClass("landscape");
-    } else {
-      removeClass("landscape");
-      addClass("portrait");
-    }
-    return;
-  };
-
-  // Detect whether device supports orientationchange event,
-  // otherwise fall back to the resize event.
-  if (Object.prototype.hasOwnProperty.call(window, "onorientationchange")) {
-    orientationEvent = "orientationchange";
-  } else {
-    orientationEvent = "resize";
-  }
-
-  // Listen for changes in orientation.
-  if (window.addEventListener) {
-    window.addEventListener(orientationEvent, handleOrientation, false);
-  } else if (window.attachEvent) {
-    window.attachEvent(orientationEvent, handleOrientation);
-  } else {
-    window[orientationEvent] = handleOrientation;
-  }
-
-  handleOrientation();
-
-  if (typeof define === 'function' && typeof define.amd === 'object' && define.amd) {
-    define(function() {
-      return device;
-    });
-  } else if (typeof module !== 'undefined' && module.exports) {
-    module.exports = device;
-  } else {
-    window.device = device;
-  }
-
-}).call(this);
-
-;
-// THIS FILE IS GENERATED - DO NOT EDIT!
-/*!mobile-detect v1.3.7 2017-09-06*/
-/*global module:false, define:false*/
-/*jshint latedef:false*/
-/*!@license Copyright 2013, Heinrich Goebl, License: MIT, see https://github.com/hgoebl/mobile-detect.js*/
-(function (define, undefined) {
-define(function () {
-    'use strict';
-
-    var impl = {};
-
-    impl.mobileDetectRules = {
-    "phones": {
-        "iPhone": "\\biPhone\\b|\\biPod\\b",
-        "BlackBerry": "BlackBerry|\\bBB10\\b|rim[0-9]+",
-        "HTC": "HTC|HTC.*(Sensation|Evo|Vision|Explorer|6800|8100|8900|A7272|S510e|C110e|Legend|Desire|T8282)|APX515CKT|Qtek9090|APA9292KT|HD_mini|Sensation.*Z710e|PG86100|Z715e|Desire.*(A8181|HD)|ADR6200|ADR6400L|ADR6425|001HT|Inspire 4G|Android.*\\bEVO\\b|T-Mobile G1|Z520m",
-        "Nexus": "Nexus One|Nexus S|Galaxy.*Nexus|Android.*Nexus.*Mobile|Nexus 4|Nexus 5|Nexus 6",
-        "Dell": "Dell.*Streak|Dell.*Aero|Dell.*Venue|DELL.*Venue Pro|Dell Flash|Dell Smoke|Dell Mini 3iX|XCD28|XCD35|\\b001DL\\b|\\b101DL\\b|\\bGS01\\b",
-        "Motorola": "Motorola|DROIDX|DROID BIONIC|\\bDroid\\b.*Build|Android.*Xoom|HRI39|MOT-|A1260|A1680|A555|A853|A855|A953|A955|A956|Motorola.*ELECTRIFY|Motorola.*i1|i867|i940|MB200|MB300|MB501|MB502|MB508|MB511|MB520|MB525|MB526|MB611|MB612|MB632|MB810|MB855|MB860|MB861|MB865|MB870|ME501|ME502|ME511|ME525|ME600|ME632|ME722|ME811|ME860|ME863|ME865|MT620|MT710|MT716|MT720|MT810|MT870|MT917|Motorola.*TITANIUM|WX435|WX445|XT300|XT301|XT311|XT316|XT317|XT319|XT320|XT390|XT502|XT530|XT531|XT532|XT535|XT603|XT610|XT611|XT615|XT681|XT701|XT702|XT711|XT720|XT800|XT806|XT860|XT862|XT875|XT882|XT883|XT894|XT901|XT907|XT909|XT910|XT912|XT928|XT926|XT915|XT919|XT925|XT1021|\\bMoto E\\b",
-        "Samsung": "\\bSamsung\\b|SM-G9250|GT-19300|SGH-I337|BGT-S5230|GT-B2100|GT-B2700|GT-B2710|GT-B3210|GT-B3310|GT-B3410|GT-B3730|GT-B3740|GT-B5510|GT-B5512|GT-B5722|GT-B6520|GT-B7300|GT-B7320|GT-B7330|GT-B7350|GT-B7510|GT-B7722|GT-B7800|GT-C3010|GT-C3011|GT-C3060|GT-C3200|GT-C3212|GT-C3212I|GT-C3262|GT-C3222|GT-C3300|GT-C3300K|GT-C3303|GT-C3303K|GT-C3310|GT-C3322|GT-C3330|GT-C3350|GT-C3500|GT-C3510|GT-C3530|GT-C3630|GT-C3780|GT-C5010|GT-C5212|GT-C6620|GT-C6625|GT-C6712|GT-E1050|GT-E1070|GT-E1075|GT-E1080|GT-E1081|GT-E1085|GT-E1087|GT-E1100|GT-E1107|GT-E1110|GT-E1120|GT-E1125|GT-E1130|GT-E1160|GT-E1170|GT-E1175|GT-E1180|GT-E1182|GT-E1200|GT-E1210|GT-E1225|GT-E1230|GT-E1390|GT-E2100|GT-E2120|GT-E2121|GT-E2152|GT-E2220|GT-E2222|GT-E2230|GT-E2232|GT-E2250|GT-E2370|GT-E2550|GT-E2652|GT-E3210|GT-E3213|GT-I5500|GT-I5503|GT-I5700|GT-I5800|GT-I5801|GT-I6410|GT-I6420|GT-I7110|GT-I7410|GT-I7500|GT-I8000|GT-I8150|GT-I8160|GT-I8190|GT-I8320|GT-I8330|GT-I8350|GT-I8530|GT-I8700|GT-I8703|GT-I8910|GT-I9000|GT-I9001|GT-I9003|GT-I9010|GT-I9020|GT-I9023|GT-I9070|GT-I9082|GT-I9100|GT-I9103|GT-I9220|GT-I9250|GT-I9300|GT-I9305|GT-I9500|GT-I9505|GT-M3510|GT-M5650|GT-M7500|GT-M7600|GT-M7603|GT-M8800|GT-M8910|GT-N7000|GT-S3110|GT-S3310|GT-S3350|GT-S3353|GT-S3370|GT-S3650|GT-S3653|GT-S3770|GT-S3850|GT-S5210|GT-S5220|GT-S5229|GT-S5230|GT-S5233|GT-S5250|GT-S5253|GT-S5260|GT-S5263|GT-S5270|GT-S5300|GT-S5330|GT-S5350|GT-S5360|GT-S5363|GT-S5369|GT-S5380|GT-S5380D|GT-S5560|GT-S5570|GT-S5600|GT-S5603|GT-S5610|GT-S5620|GT-S5660|GT-S5670|GT-S5690|GT-S5750|GT-S5780|GT-S5830|GT-S5839|GT-S6102|GT-S6500|GT-S7070|GT-S7200|GT-S7220|GT-S7230|GT-S7233|GT-S7250|GT-S7500|GT-S7530|GT-S7550|GT-S7562|GT-S7710|GT-S8000|GT-S8003|GT-S8500|GT-S8530|GT-S8600|SCH-A310|SCH-A530|SCH-A570|SCH-A610|SCH-A630|SCH-A650|SCH-A790|SCH-A795|SCH-A850|SCH-A870|SCH-A890|SCH-A930|SCH-A950|SCH-A970|SCH-A990|SCH-I100|SCH-I110|SCH-I400|SCH-I405|SCH-I500|SCH-I510|SCH-I515|SCH-I600|SCH-I730|SCH-I760|SCH-I770|SCH-I830|SCH-I910|SCH-I920|SCH-I959|SCH-LC11|SCH-N150|SCH-N300|SCH-R100|SCH-R300|SCH-R351|SCH-R400|SCH-R410|SCH-T300|SCH-U310|SCH-U320|SCH-U350|SCH-U360|SCH-U365|SCH-U370|SCH-U380|SCH-U410|SCH-U430|SCH-U450|SCH-U460|SCH-U470|SCH-U490|SCH-U540|SCH-U550|SCH-U620|SCH-U640|SCH-U650|SCH-U660|SCH-U700|SCH-U740|SCH-U750|SCH-U810|SCH-U820|SCH-U900|SCH-U940|SCH-U960|SCS-26UC|SGH-A107|SGH-A117|SGH-A127|SGH-A137|SGH-A157|SGH-A167|SGH-A177|SGH-A187|SGH-A197|SGH-A227|SGH-A237|SGH-A257|SGH-A437|SGH-A517|SGH-A597|SGH-A637|SGH-A657|SGH-A667|SGH-A687|SGH-A697|SGH-A707|SGH-A717|SGH-A727|SGH-A737|SGH-A747|SGH-A767|SGH-A777|SGH-A797|SGH-A817|SGH-A827|SGH-A837|SGH-A847|SGH-A867|SGH-A877|SGH-A887|SGH-A897|SGH-A927|SGH-B100|SGH-B130|SGH-B200|SGH-B220|SGH-C100|SGH-C110|SGH-C120|SGH-C130|SGH-C140|SGH-C160|SGH-C170|SGH-C180|SGH-C200|SGH-C207|SGH-C210|SGH-C225|SGH-C230|SGH-C417|SGH-C450|SGH-D307|SGH-D347|SGH-D357|SGH-D407|SGH-D415|SGH-D780|SGH-D807|SGH-D980|SGH-E105|SGH-E200|SGH-E315|SGH-E316|SGH-E317|SGH-E335|SGH-E590|SGH-E635|SGH-E715|SGH-E890|SGH-F300|SGH-F480|SGH-I200|SGH-I300|SGH-I320|SGH-I550|SGH-I577|SGH-I600|SGH-I607|SGH-I617|SGH-I627|SGH-I637|SGH-I677|SGH-I700|SGH-I717|SGH-I727|SGH-i747M|SGH-I777|SGH-I780|SGH-I827|SGH-I847|SGH-I857|SGH-I896|SGH-I897|SGH-I900|SGH-I907|SGH-I917|SGH-I927|SGH-I937|SGH-I997|SGH-J150|SGH-J200|SGH-L170|SGH-L700|SGH-M110|SGH-M150|SGH-M200|SGH-N105|SGH-N500|SGH-N600|SGH-N620|SGH-N625|SGH-N700|SGH-N710|SGH-P107|SGH-P207|SGH-P300|SGH-P310|SGH-P520|SGH-P735|SGH-P777|SGH-Q105|SGH-R210|SGH-R220|SGH-R225|SGH-S105|SGH-S307|SGH-T109|SGH-T119|SGH-T139|SGH-T209|SGH-T219|SGH-T229|SGH-T239|SGH-T249|SGH-T259|SGH-T309|SGH-T319|SGH-T329|SGH-T339|SGH-T349|SGH-T359|SGH-T369|SGH-T379|SGH-T409|SGH-T429|SGH-T439|SGH-T459|SGH-T469|SGH-T479|SGH-T499|SGH-T509|SGH-T519|SGH-T539|SGH-T559|SGH-T589|SGH-T609|SGH-T619|SGH-T629|SGH-T639|SGH-T659|SGH-T669|SGH-T679|SGH-T709|SGH-T719|SGH-T729|SGH-T739|SGH-T746|SGH-T749|SGH-T759|SGH-T769|SGH-T809|SGH-T819|SGH-T839|SGH-T919|SGH-T929|SGH-T939|SGH-T959|SGH-T989|SGH-U100|SGH-U200|SGH-U800|SGH-V205|SGH-V206|SGH-X100|SGH-X105|SGH-X120|SGH-X140|SGH-X426|SGH-X427|SGH-X475|SGH-X495|SGH-X497|SGH-X507|SGH-X600|SGH-X610|SGH-X620|SGH-X630|SGH-X700|SGH-X820|SGH-X890|SGH-Z130|SGH-Z150|SGH-Z170|SGH-ZX10|SGH-ZX20|SHW-M110|SPH-A120|SPH-A400|SPH-A420|SPH-A460|SPH-A500|SPH-A560|SPH-A600|SPH-A620|SPH-A660|SPH-A700|SPH-A740|SPH-A760|SPH-A790|SPH-A800|SPH-A820|SPH-A840|SPH-A880|SPH-A900|SPH-A940|SPH-A960|SPH-D600|SPH-D700|SPH-D710|SPH-D720|SPH-I300|SPH-I325|SPH-I330|SPH-I350|SPH-I500|SPH-I600|SPH-I700|SPH-L700|SPH-M100|SPH-M220|SPH-M240|SPH-M300|SPH-M305|SPH-M320|SPH-M330|SPH-M350|SPH-M360|SPH-M370|SPH-M380|SPH-M510|SPH-M540|SPH-M550|SPH-M560|SPH-M570|SPH-M580|SPH-M610|SPH-M620|SPH-M630|SPH-M800|SPH-M810|SPH-M850|SPH-M900|SPH-M910|SPH-M920|SPH-M930|SPH-N100|SPH-N200|SPH-N240|SPH-N300|SPH-N400|SPH-Z400|SWC-E100|SCH-i909|GT-N7100|GT-N7105|SCH-I535|SM-N900A|SGH-I317|SGH-T999L|GT-S5360B|GT-I8262|GT-S6802|GT-S6312|GT-S6310|GT-S5312|GT-S5310|GT-I9105|GT-I8510|GT-S6790N|SM-G7105|SM-N9005|GT-S5301|GT-I9295|GT-I9195|SM-C101|GT-S7392|GT-S7560|GT-B7610|GT-I5510|GT-S7582|GT-S7530E|GT-I8750|SM-G9006V|SM-G9008V|SM-G9009D|SM-G900A|SM-G900D|SM-G900F|SM-G900H|SM-G900I|SM-G900J|SM-G900K|SM-G900L|SM-G900M|SM-G900P|SM-G900R4|SM-G900S|SM-G900T|SM-G900V|SM-G900W8|SHV-E160K|SCH-P709|SCH-P729|SM-T2558|GT-I9205|SM-G9350|SM-J120F|SM-G920F|SM-G920V|SM-G930F|SM-N910C",
-        "LG": "\\bLG\\b;|LG[- ]?(C800|C900|E400|E610|E900|E-900|F160|F180K|F180L|F180S|730|855|L160|LS740|LS840|LS970|LU6200|MS690|MS695|MS770|MS840|MS870|MS910|P500|P700|P705|VM696|AS680|AS695|AX840|C729|E970|GS505|272|C395|E739BK|E960|L55C|L75C|LS696|LS860|P769BK|P350|P500|P509|P870|UN272|US730|VS840|VS950|LN272|LN510|LS670|LS855|LW690|MN270|MN510|P509|P769|P930|UN200|UN270|UN510|UN610|US670|US740|US760|UX265|UX840|VN271|VN530|VS660|VS700|VS740|VS750|VS910|VS920|VS930|VX9200|VX11000|AX840A|LW770|P506|P925|P999|E612|D955|D802|MS323)",
-        "Sony": "SonyST|SonyLT|SonyEricsson|SonyEricssonLT15iv|LT18i|E10i|LT28h|LT26w|SonyEricssonMT27i|C5303|C6902|C6903|C6906|C6943|D2533",
-        "Asus": "Asus.*Galaxy|PadFone.*Mobile",
-        "NokiaLumia": "Lumia [0-9]{3,4}",
-        "Micromax": "Micromax.*\\b(A210|A92|A88|A72|A111|A110Q|A115|A116|A110|A90S|A26|A51|A35|A54|A25|A27|A89|A68|A65|A57|A90)\\b",
-        "Palm": "PalmSource|Palm",
-        "Vertu": "Vertu|Vertu.*Ltd|Vertu.*Ascent|Vertu.*Ayxta|Vertu.*Constellation(F|Quest)?|Vertu.*Monika|Vertu.*Signature",
-        "Pantech": "PANTECH|IM-A850S|IM-A840S|IM-A830L|IM-A830K|IM-A830S|IM-A820L|IM-A810K|IM-A810S|IM-A800S|IM-T100K|IM-A725L|IM-A780L|IM-A775C|IM-A770K|IM-A760S|IM-A750K|IM-A740S|IM-A730S|IM-A720L|IM-A710K|IM-A690L|IM-A690S|IM-A650S|IM-A630K|IM-A600S|VEGA PTL21|PT003|P8010|ADR910L|P6030|P6020|P9070|P4100|P9060|P5000|CDM8992|TXT8045|ADR8995|IS11PT|P2030|P6010|P8000|PT002|IS06|CDM8999|P9050|PT001|TXT8040|P2020|P9020|P2000|P7040|P7000|C790",
-        "Fly": "IQ230|IQ444|IQ450|IQ440|IQ442|IQ441|IQ245|IQ256|IQ236|IQ255|IQ235|IQ245|IQ275|IQ240|IQ285|IQ280|IQ270|IQ260|IQ250",
-        "Wiko": "KITE 4G|HIGHWAY|GETAWAY|STAIRWAY|DARKSIDE|DARKFULL|DARKNIGHT|DARKMOON|SLIDE|WAX 4G|RAINBOW|BLOOM|SUNSET|GOA(?!nna)|LENNY|BARRY|IGGY|OZZY|CINK FIVE|CINK PEAX|CINK PEAX 2|CINK SLIM|CINK SLIM 2|CINK +|CINK KING|CINK PEAX|CINK SLIM|SUBLIM",
-        "iMobile": "i-mobile (IQ|i-STYLE|idea|ZAA|Hitz)",
-        "SimValley": "\\b(SP-80|XT-930|SX-340|XT-930|SX-310|SP-360|SP60|SPT-800|SP-120|SPT-800|SP-140|SPX-5|SPX-8|SP-100|SPX-8|SPX-12)\\b",
-        "Wolfgang": "AT-B24D|AT-AS50HD|AT-AS40W|AT-AS55HD|AT-AS45q2|AT-B26D|AT-AS50Q",
-        "Alcatel": "Alcatel",
-        "Nintendo": "Nintendo 3DS",
-        "Amoi": "Amoi",
-        "INQ": "INQ",
-        "GenericPhone": "Tapatalk|PDA;|SAGEM|\\bmmp\\b|pocket|\\bpsp\\b|symbian|Smartphone|smartfon|treo|up.browser|up.link|vodafone|\\bwap\\b|nokia|Series40|Series60|S60|SonyEricsson|N900|MAUI.*WAP.*Browser"
-    },
-    "tablets": {
-        "iPad": "iPad|iPad.*Mobile",
-        "NexusTablet": "Android.*Nexus[\\s]+(7|9|10)",
-        "SamsungTablet": "SAMSUNG.*Tablet|Galaxy.*Tab|SC-01C|GT-P1000|GT-P1003|GT-P1010|GT-P3105|GT-P6210|GT-P6800|GT-P6810|GT-P7100|GT-P7300|GT-P7310|GT-P7500|GT-P7510|SCH-I800|SCH-I815|SCH-I905|SGH-I957|SGH-I987|SGH-T849|SGH-T859|SGH-T869|SPH-P100|GT-P3100|GT-P3108|GT-P3110|GT-P5100|GT-P5110|GT-P6200|GT-P7320|GT-P7511|GT-N8000|GT-P8510|SGH-I497|SPH-P500|SGH-T779|SCH-I705|SCH-I915|GT-N8013|GT-P3113|GT-P5113|GT-P8110|GT-N8010|GT-N8005|GT-N8020|GT-P1013|GT-P6201|GT-P7501|GT-N5100|GT-N5105|GT-N5110|SHV-E140K|SHV-E140L|SHV-E140S|SHV-E150S|SHV-E230K|SHV-E230L|SHV-E230S|SHW-M180K|SHW-M180L|SHW-M180S|SHW-M180W|SHW-M300W|SHW-M305W|SHW-M380K|SHW-M380S|SHW-M380W|SHW-M430W|SHW-M480K|SHW-M480S|SHW-M480W|SHW-M485W|SHW-M486W|SHW-M500W|GT-I9228|SCH-P739|SCH-I925|GT-I9200|GT-P5200|GT-P5210|GT-P5210X|SM-T311|SM-T310|SM-T310X|SM-T210|SM-T210R|SM-T211|SM-P600|SM-P601|SM-P605|SM-P900|SM-P901|SM-T217|SM-T217A|SM-T217S|SM-P6000|SM-T3100|SGH-I467|XE500|SM-T110|GT-P5220|GT-I9200X|GT-N5110X|GT-N5120|SM-P905|SM-T111|SM-T2105|SM-T315|SM-T320|SM-T320X|SM-T321|SM-T520|SM-T525|SM-T530NU|SM-T230NU|SM-T330NU|SM-T900|XE500T1C|SM-P605V|SM-P905V|SM-T337V|SM-T537V|SM-T707V|SM-T807V|SM-P600X|SM-P900X|SM-T210X|SM-T230|SM-T230X|SM-T325|GT-P7503|SM-T531|SM-T330|SM-T530|SM-T705|SM-T705C|SM-T535|SM-T331|SM-T800|SM-T700|SM-T537|SM-T807|SM-P907A|SM-T337A|SM-T537A|SM-T707A|SM-T807A|SM-T237|SM-T807P|SM-P607T|SM-T217T|SM-T337T|SM-T807T|SM-T116NQ|SM-T116BU|SM-P550|SM-T350|SM-T550|SM-T9000|SM-P9000|SM-T705Y|SM-T805|GT-P3113|SM-T710|SM-T810|SM-T815|SM-T360|SM-T533|SM-T113|SM-T335|SM-T715|SM-T560|SM-T670|SM-T677|SM-T377|SM-T567|SM-T357T|SM-T555|SM-T561|SM-T713|SM-T719|SM-T813|SM-T819|SM-T580|SM-T355Y|SM-T280|SM-T817A|SM-T820|SM-W700|SM-P580|SM-T587|SM-P350|SM-P555M|SM-P355M|SM-T113NU|SM-T815Y",
-        "Kindle": "Kindle|Silk.*Accelerated|Android.*\\b(KFOT|KFTT|KFJWI|KFJWA|KFOTE|KFSOWI|KFTHWI|KFTHWA|KFAPWI|KFAPWA|WFJWAE|KFSAWA|KFSAWI|KFASWI|KFARWI|KFFOWI|KFGIWI|KFMEWI)\\b|Android.*Silk\/[0-9.]+ like Chrome\/[0-9.]+ (?!Mobile)",
-        "SurfaceTablet": "Windows NT [0-9.]+; ARM;.*(Tablet|ARMBJS)",
-        "HPTablet": "HP Slate (7|8|10)|HP ElitePad 900|hp-tablet|EliteBook.*Touch|HP 8|Slate 21|HP SlateBook 10",
-        "AsusTablet": "^.*PadFone((?!Mobile).)*$|Transformer|TF101|TF101G|TF300T|TF300TG|TF300TL|TF700T|TF700KL|TF701T|TF810C|ME171|ME301T|ME302C|ME371MG|ME370T|ME372MG|ME172V|ME173X|ME400C|Slider SL101|\\bK00F\\b|\\bK00C\\b|\\bK00E\\b|\\bK00L\\b|TX201LA|ME176C|ME102A|\\bM80TA\\b|ME372CL|ME560CG|ME372CG|ME302KL| K010 | K011 | K017 | K01E |ME572C|ME103K|ME170C|ME171C|\\bME70C\\b|ME581C|ME581CL|ME8510C|ME181C|P01Y|PO1MA|P01Z|\\bP027\\b",
-        "BlackBerryTablet": "PlayBook|RIM Tablet",
-        "HTCtablet": "HTC_Flyer_P512|HTC Flyer|HTC Jetstream|HTC-P715a|HTC EVO View 4G|PG41200|PG09410",
-        "MotorolaTablet": "xoom|sholest|MZ615|MZ605|MZ505|MZ601|MZ602|MZ603|MZ604|MZ606|MZ607|MZ608|MZ609|MZ615|MZ616|MZ617",
-        "NookTablet": "Android.*Nook|NookColor|nook browser|BNRV200|BNRV200A|BNTV250|BNTV250A|BNTV400|BNTV600|LogicPD Zoom2",
-        "AcerTablet": "Android.*; \\b(A100|A101|A110|A200|A210|A211|A500|A501|A510|A511|A700|A701|W500|W500P|W501|W501P|W510|W511|W700|G100|G100W|B1-A71|B1-710|B1-711|A1-810|A1-811|A1-830)\\b|W3-810|\\bA3-A10\\b|\\bA3-A11\\b|\\bA3-A20\\b|\\bA3-A30",
-        "ToshibaTablet": "Android.*(AT100|AT105|AT200|AT205|AT270|AT275|AT300|AT305|AT1S5|AT500|AT570|AT700|AT830)|TOSHIBA.*FOLIO",
-        "LGTablet": "\\bL-06C|LG-V909|LG-V900|LG-V700|LG-V510|LG-V500|LG-V410|LG-V400|LG-VK810\\b",
-        "FujitsuTablet": "Android.*\\b(F-01D|F-02F|F-05E|F-10D|M532|Q572)\\b",
-        "PrestigioTablet": "PMP3170B|PMP3270B|PMP3470B|PMP7170B|PMP3370B|PMP3570C|PMP5870C|PMP3670B|PMP5570C|PMP5770D|PMP3970B|PMP3870C|PMP5580C|PMP5880D|PMP5780D|PMP5588C|PMP7280C|PMP7280C3G|PMP7280|PMP7880D|PMP5597D|PMP5597|PMP7100D|PER3464|PER3274|PER3574|PER3884|PER5274|PER5474|PMP5097CPRO|PMP5097|PMP7380D|PMP5297C|PMP5297C_QUAD|PMP812E|PMP812E3G|PMP812F|PMP810E|PMP880TD|PMT3017|PMT3037|PMT3047|PMT3057|PMT7008|PMT5887|PMT5001|PMT5002",
-        "LenovoTablet": "Lenovo TAB|Idea(Tab|Pad)( A1|A10| K1|)|ThinkPad([ ]+)?Tablet|YT3-850M|YT3-X90L|YT3-X90F|YT3-X90X|Lenovo.*(S2109|S2110|S5000|S6000|K3011|A3000|A3500|A1000|A2107|A2109|A1107|A5500|A7600|B6000|B8000|B8080)(-|)(FL|F|HV|H|)",
-        "DellTablet": "Venue 11|Venue 8|Venue 7|Dell Streak 10|Dell Streak 7",
-        "YarvikTablet": "Android.*\\b(TAB210|TAB211|TAB224|TAB250|TAB260|TAB264|TAB310|TAB360|TAB364|TAB410|TAB411|TAB420|TAB424|TAB450|TAB460|TAB461|TAB464|TAB465|TAB467|TAB468|TAB07-100|TAB07-101|TAB07-150|TAB07-151|TAB07-152|TAB07-200|TAB07-201-3G|TAB07-210|TAB07-211|TAB07-212|TAB07-214|TAB07-220|TAB07-400|TAB07-485|TAB08-150|TAB08-200|TAB08-201-3G|TAB08-201-30|TAB09-100|TAB09-211|TAB09-410|TAB10-150|TAB10-201|TAB10-211|TAB10-400|TAB10-410|TAB13-201|TAB274EUK|TAB275EUK|TAB374EUK|TAB462EUK|TAB474EUK|TAB9-200)\\b",
-        "MedionTablet": "Android.*\\bOYO\\b|LIFE.*(P9212|P9514|P9516|S9512)|LIFETAB",
-        "ArnovaTablet": "97G4|AN10G2|AN7bG3|AN7fG3|AN8G3|AN8cG3|AN7G3|AN9G3|AN7dG3|AN7dG3ST|AN7dG3ChildPad|AN10bG3|AN10bG3DT|AN9G2",
-        "IntensoTablet": "INM8002KP|INM1010FP|INM805ND|Intenso Tab|TAB1004",
-        "IRUTablet": "M702pro",
-        "MegafonTablet": "MegaFon V9|\\bZTE V9\\b|Android.*\\bMT7A\\b",
-        "EbodaTablet": "E-Boda (Supreme|Impresspeed|Izzycomm|Essential)",
-        "AllViewTablet": "Allview.*(Viva|Alldro|City|Speed|All TV|Frenzy|Quasar|Shine|TX1|AX1|AX2)",
-        "ArchosTablet": "\\b(101G9|80G9|A101IT)\\b|Qilive 97R|Archos5|\\bARCHOS (70|79|80|90|97|101|FAMILYPAD|)(b|c|)(G10| Cobalt| TITANIUM(HD|)| Xenon| Neon|XSK| 2| XS 2| PLATINUM| CARBON|GAMEPAD)\\b",
-        "AinolTablet": "NOVO7|NOVO8|NOVO10|Novo7Aurora|Novo7Basic|NOVO7PALADIN|novo9-Spark",
-        "NokiaLumiaTablet": "Lumia 2520",
-        "SonyTablet": "Sony.*Tablet|Xperia Tablet|Sony Tablet S|SO-03E|SGPT12|SGPT13|SGPT114|SGPT121|SGPT122|SGPT123|SGPT111|SGPT112|SGPT113|SGPT131|SGPT132|SGPT133|SGPT211|SGPT212|SGPT213|SGP311|SGP312|SGP321|EBRD1101|EBRD1102|EBRD1201|SGP351|SGP341|SGP511|SGP512|SGP521|SGP541|SGP551|SGP621|SGP612|SOT31",
-        "PhilipsTablet": "\\b(PI2010|PI3000|PI3100|PI3105|PI3110|PI3205|PI3210|PI3900|PI4010|PI7000|PI7100)\\b",
-        "CubeTablet": "Android.*(K8GT|U9GT|U10GT|U16GT|U17GT|U18GT|U19GT|U20GT|U23GT|U30GT)|CUBE U8GT",
-        "CobyTablet": "MID1042|MID1045|MID1125|MID1126|MID7012|MID7014|MID7015|MID7034|MID7035|MID7036|MID7042|MID7048|MID7127|MID8042|MID8048|MID8127|MID9042|MID9740|MID9742|MID7022|MID7010",
-        "MIDTablet": "M9701|M9000|M9100|M806|M1052|M806|T703|MID701|MID713|MID710|MID727|MID760|MID830|MID728|MID933|MID125|MID810|MID732|MID120|MID930|MID800|MID731|MID900|MID100|MID820|MID735|MID980|MID130|MID833|MID737|MID960|MID135|MID860|MID736|MID140|MID930|MID835|MID733|MID4X10",
-        "MSITablet": "MSI \\b(Primo 73K|Primo 73L|Primo 81L|Primo 77|Primo 93|Primo 75|Primo 76|Primo 73|Primo 81|Primo 91|Primo 90|Enjoy 71|Enjoy 7|Enjoy 10)\\b",
-        "SMiTTablet": "Android.*(\\bMID\\b|MID-560|MTV-T1200|MTV-PND531|MTV-P1101|MTV-PND530)",
-        "RockChipTablet": "Android.*(RK2818|RK2808A|RK2918|RK3066)|RK2738|RK2808A",
-        "FlyTablet": "IQ310|Fly Vision",
-        "bqTablet": "Android.*(bq)?.*(Elcano|Curie|Edison|Maxwell|Kepler|Pascal|Tesla|Hypatia|Platon|Newton|Livingstone|Cervantes|Avant|Aquaris [E|M]10)|Maxwell.*Lite|Maxwell.*Plus",
-        "HuaweiTablet": "MediaPad|MediaPad 7 Youth|IDEOS S7|S7-201c|S7-202u|S7-101|S7-103|S7-104|S7-105|S7-106|S7-201|S7-Slim",
-        "NecTablet": "\\bN-06D|\\bN-08D",
-        "PantechTablet": "Pantech.*P4100",
-        "BronchoTablet": "Broncho.*(N701|N708|N802|a710)",
-        "VersusTablet": "TOUCHPAD.*[78910]|\\bTOUCHTAB\\b",
-        "ZyncTablet": "z1000|Z99 2G|z99|z930|z999|z990|z909|Z919|z900",
-        "PositivoTablet": "TB07STA|TB10STA|TB07FTA|TB10FTA",
-        "NabiTablet": "Android.*\\bNabi",
-        "KoboTablet": "Kobo Touch|\\bK080\\b|\\bVox\\b Build|\\bArc\\b Build",
-        "DanewTablet": "DSlide.*\\b(700|701R|702|703R|704|802|970|971|972|973|974|1010|1012)\\b",
-        "TexetTablet": "NaviPad|TB-772A|TM-7045|TM-7055|TM-9750|TM-7016|TM-7024|TM-7026|TM-7041|TM-7043|TM-7047|TM-8041|TM-9741|TM-9747|TM-9748|TM-9751|TM-7022|TM-7021|TM-7020|TM-7011|TM-7010|TM-7023|TM-7025|TM-7037W|TM-7038W|TM-7027W|TM-9720|TM-9725|TM-9737W|TM-1020|TM-9738W|TM-9740|TM-9743W|TB-807A|TB-771A|TB-727A|TB-725A|TB-719A|TB-823A|TB-805A|TB-723A|TB-715A|TB-707A|TB-705A|TB-709A|TB-711A|TB-890HD|TB-880HD|TB-790HD|TB-780HD|TB-770HD|TB-721HD|TB-710HD|TB-434HD|TB-860HD|TB-840HD|TB-760HD|TB-750HD|TB-740HD|TB-730HD|TB-722HD|TB-720HD|TB-700HD|TB-500HD|TB-470HD|TB-431HD|TB-430HD|TB-506|TB-504|TB-446|TB-436|TB-416|TB-146SE|TB-126SE",
-        "PlaystationTablet": "Playstation.*(Portable|Vita)",
-        "TrekstorTablet": "ST10416-1|VT10416-1|ST70408-1|ST702xx-1|ST702xx-2|ST80208|ST97216|ST70104-2|VT10416-2|ST10216-2A|SurfTab",
-        "PyleAudioTablet": "\\b(PTBL10CEU|PTBL10C|PTBL72BC|PTBL72BCEU|PTBL7CEU|PTBL7C|PTBL92BC|PTBL92BCEU|PTBL9CEU|PTBL9CUK|PTBL9C)\\b",
-        "AdvanTablet": "Android.* \\b(E3A|T3X|T5C|T5B|T3E|T3C|T3B|T1J|T1F|T2A|T1H|T1i|E1C|T1-E|T5-A|T4|E1-B|T2Ci|T1-B|T1-D|O1-A|E1-A|T1-A|T3A|T4i)\\b ",
-        "DanyTechTablet": "Genius Tab G3|Genius Tab S2|Genius Tab Q3|Genius Tab G4|Genius Tab Q4|Genius Tab G-II|Genius TAB GII|Genius TAB GIII|Genius Tab S1",
-        "GalapadTablet": "Android.*\\bG1\\b",
-        "MicromaxTablet": "Funbook|Micromax.*\\b(P250|P560|P360|P362|P600|P300|P350|P500|P275)\\b",
-        "KarbonnTablet": "Android.*\\b(A39|A37|A34|ST8|ST10|ST7|Smart Tab3|Smart Tab2)\\b",
-        "AllFineTablet": "Fine7 Genius|Fine7 Shine|Fine7 Air|Fine8 Style|Fine9 More|Fine10 Joy|Fine11 Wide",
-        "PROSCANTablet": "\\b(PEM63|PLT1023G|PLT1041|PLT1044|PLT1044G|PLT1091|PLT4311|PLT4311PL|PLT4315|PLT7030|PLT7033|PLT7033D|PLT7035|PLT7035D|PLT7044K|PLT7045K|PLT7045KB|PLT7071KG|PLT7072|PLT7223G|PLT7225G|PLT7777G|PLT7810K|PLT7849G|PLT7851G|PLT7852G|PLT8015|PLT8031|PLT8034|PLT8036|PLT8080K|PLT8082|PLT8088|PLT8223G|PLT8234G|PLT8235G|PLT8816K|PLT9011|PLT9045K|PLT9233G|PLT9735|PLT9760G|PLT9770G)\\b",
-        "YONESTablet": "BQ1078|BC1003|BC1077|RK9702|BC9730|BC9001|IT9001|BC7008|BC7010|BC708|BC728|BC7012|BC7030|BC7027|BC7026",
-        "ChangJiaTablet": "TPC7102|TPC7103|TPC7105|TPC7106|TPC7107|TPC7201|TPC7203|TPC7205|TPC7210|TPC7708|TPC7709|TPC7712|TPC7110|TPC8101|TPC8103|TPC8105|TPC8106|TPC8203|TPC8205|TPC8503|TPC9106|TPC9701|TPC97101|TPC97103|TPC97105|TPC97106|TPC97111|TPC97113|TPC97203|TPC97603|TPC97809|TPC97205|TPC10101|TPC10103|TPC10106|TPC10111|TPC10203|TPC10205|TPC10503",
-        "GUTablet": "TX-A1301|TX-M9002|Q702|kf026",
-        "PointOfViewTablet": "TAB-P506|TAB-navi-7-3G-M|TAB-P517|TAB-P-527|TAB-P701|TAB-P703|TAB-P721|TAB-P731N|TAB-P741|TAB-P825|TAB-P905|TAB-P925|TAB-PR945|TAB-PL1015|TAB-P1025|TAB-PI1045|TAB-P1325|TAB-PROTAB[0-9]+|TAB-PROTAB25|TAB-PROTAB26|TAB-PROTAB27|TAB-PROTAB26XL|TAB-PROTAB2-IPS9|TAB-PROTAB30-IPS9|TAB-PROTAB25XXL|TAB-PROTAB26-IPS10|TAB-PROTAB30-IPS10",
-        "OvermaxTablet": "OV-(SteelCore|NewBase|Basecore|Baseone|Exellen|Quattor|EduTab|Solution|ACTION|BasicTab|TeddyTab|MagicTab|Stream|TB-08|TB-09)",
-        "HCLTablet": "HCL.*Tablet|Connect-3G-2.0|Connect-2G-2.0|ME Tablet U1|ME Tablet U2|ME Tablet G1|ME Tablet X1|ME Tablet Y2|ME Tablet Sync",
-        "DPSTablet": "DPS Dream 9|DPS Dual 7",
-        "VistureTablet": "V97 HD|i75 3G|Visture V4( HD)?|Visture V5( HD)?|Visture V10",
-        "CrestaTablet": "CTP(-)?810|CTP(-)?818|CTP(-)?828|CTP(-)?838|CTP(-)?888|CTP(-)?978|CTP(-)?980|CTP(-)?987|CTP(-)?988|CTP(-)?989",
-        "MediatekTablet": "\\bMT8125|MT8389|MT8135|MT8377\\b",
-        "ConcordeTablet": "Concorde([ ]+)?Tab|ConCorde ReadMan",
-        "GoCleverTablet": "GOCLEVER TAB|A7GOCLEVER|M1042|M7841|M742|R1042BK|R1041|TAB A975|TAB A7842|TAB A741|TAB A741L|TAB M723G|TAB M721|TAB A1021|TAB I921|TAB R721|TAB I720|TAB T76|TAB R70|TAB R76.2|TAB R106|TAB R83.2|TAB M813G|TAB I721|GCTA722|TAB I70|TAB I71|TAB S73|TAB R73|TAB R74|TAB R93|TAB R75|TAB R76.1|TAB A73|TAB A93|TAB A93.2|TAB T72|TAB R83|TAB R974|TAB R973|TAB A101|TAB A103|TAB A104|TAB A104.2|R105BK|M713G|A972BK|TAB A971|TAB R974.2|TAB R104|TAB R83.3|TAB A1042",
-        "ModecomTablet": "FreeTAB 9000|FreeTAB 7.4|FreeTAB 7004|FreeTAB 7800|FreeTAB 2096|FreeTAB 7.5|FreeTAB 1014|FreeTAB 1001 |FreeTAB 8001|FreeTAB 9706|FreeTAB 9702|FreeTAB 7003|FreeTAB 7002|FreeTAB 1002|FreeTAB 7801|FreeTAB 1331|FreeTAB 1004|FreeTAB 8002|FreeTAB 8014|FreeTAB 9704|FreeTAB 1003",
-        "VoninoTablet": "\\b(Argus[ _]?S|Diamond[ _]?79HD|Emerald[ _]?78E|Luna[ _]?70C|Onyx[ _]?S|Onyx[ _]?Z|Orin[ _]?HD|Orin[ _]?S|Otis[ _]?S|SpeedStar[ _]?S|Magnet[ _]?M9|Primus[ _]?94[ _]?3G|Primus[ _]?94HD|Primus[ _]?QS|Android.*\\bQ8\\b|Sirius[ _]?EVO[ _]?QS|Sirius[ _]?QS|Spirit[ _]?S)\\b",
-        "ECSTablet": "V07OT2|TM105A|S10OT1|TR10CS1",
-        "StorexTablet": "eZee[_']?(Tab|Go)[0-9]+|TabLC7|Looney Tunes Tab",
-        "VodafoneTablet": "SmartTab([ ]+)?[0-9]+|SmartTabII10|SmartTabII7|VF-1497",
-        "EssentielBTablet": "Smart[ ']?TAB[ ]+?[0-9]+|Family[ ']?TAB2",
-        "RossMoorTablet": "RM-790|RM-997|RMD-878G|RMD-974R|RMT-705A|RMT-701|RME-601|RMT-501|RMT-711",
-        "iMobileTablet": "i-mobile i-note",
-        "TolinoTablet": "tolino tab [0-9.]+|tolino shine",
-        "AudioSonicTablet": "\\bC-22Q|T7-QC|T-17B|T-17P\\b",
-        "AMPETablet": "Android.* A78 ",
-        "SkkTablet": "Android.* (SKYPAD|PHOENIX|CYCLOPS)",
-        "TecnoTablet": "TECNO P9",
-        "JXDTablet": "Android.* \\b(F3000|A3300|JXD5000|JXD3000|JXD2000|JXD300B|JXD300|S5800|S7800|S602b|S5110b|S7300|S5300|S602|S603|S5100|S5110|S601|S7100a|P3000F|P3000s|P101|P200s|P1000m|P200m|P9100|P1000s|S6600b|S908|P1000|P300|S18|S6600|S9100)\\b",
-        "iJoyTablet": "Tablet (Spirit 7|Essentia|Galatea|Fusion|Onix 7|Landa|Titan|Scooby|Deox|Stella|Themis|Argon|Unique 7|Sygnus|Hexen|Finity 7|Cream|Cream X2|Jade|Neon 7|Neron 7|Kandy|Scape|Saphyr 7|Rebel|Biox|Rebel|Rebel 8GB|Myst|Draco 7|Myst|Tab7-004|Myst|Tadeo Jones|Tablet Boing|Arrow|Draco Dual Cam|Aurix|Mint|Amity|Revolution|Finity 9|Neon 9|T9w|Amity 4GB Dual Cam|Stone 4GB|Stone 8GB|Andromeda|Silken|X2|Andromeda II|Halley|Flame|Saphyr 9,7|Touch 8|Planet|Triton|Unique 10|Hexen 10|Memphis 4GB|Memphis 8GB|Onix 10)",
-        "FX2Tablet": "FX2 PAD7|FX2 PAD10",
-        "XoroTablet": "KidsPAD 701|PAD[ ]?712|PAD[ ]?714|PAD[ ]?716|PAD[ ]?717|PAD[ ]?718|PAD[ ]?720|PAD[ ]?721|PAD[ ]?722|PAD[ ]?790|PAD[ ]?792|PAD[ ]?900|PAD[ ]?9715D|PAD[ ]?9716DR|PAD[ ]?9718DR|PAD[ ]?9719QR|PAD[ ]?9720QR|TelePAD1030|Telepad1032|TelePAD730|TelePAD731|TelePAD732|TelePAD735Q|TelePAD830|TelePAD9730|TelePAD795|MegaPAD 1331|MegaPAD 1851|MegaPAD 2151",
-        "ViewsonicTablet": "ViewPad 10pi|ViewPad 10e|ViewPad 10s|ViewPad E72|ViewPad7|ViewPad E100|ViewPad 7e|ViewSonic VB733|VB100a",
-        "OdysTablet": "LOOX|XENO10|ODYS[ -](Space|EVO|Xpress|NOON)|\\bXELIO\\b|Xelio10Pro|XELIO7PHONETAB|XELIO10EXTREME|XELIOPT2|NEO_QUAD10",
-        "CaptivaTablet": "CAPTIVA PAD",
-        "IconbitTablet": "NetTAB|NT-3702|NT-3702S|NT-3702S|NT-3603P|NT-3603P|NT-0704S|NT-0704S|NT-3805C|NT-3805C|NT-0806C|NT-0806C|NT-0909T|NT-0909T|NT-0907S|NT-0907S|NT-0902S|NT-0902S",
-        "TeclastTablet": "T98 4G|\\bP80\\b|\\bX90HD\\b|X98 Air|X98 Air 3G|\\bX89\\b|P80 3G|\\bX80h\\b|P98 Air|\\bX89HD\\b|P98 3G|\\bP90HD\\b|P89 3G|X98 3G|\\bP70h\\b|P79HD 3G|G18d 3G|\\bP79HD\\b|\\bP89s\\b|\\bA88\\b|\\bP10HD\\b|\\bP19HD\\b|G18 3G|\\bP78HD\\b|\\bA78\\b|\\bP75\\b|G17s 3G|G17h 3G|\\bP85t\\b|\\bP90\\b|\\bP11\\b|\\bP98t\\b|\\bP98HD\\b|\\bG18d\\b|\\bP85s\\b|\\bP11HD\\b|\\bP88s\\b|\\bA80HD\\b|\\bA80se\\b|\\bA10h\\b|\\bP89\\b|\\bP78s\\b|\\bG18\\b|\\bP85\\b|\\bA70h\\b|\\bA70\\b|\\bG17\\b|\\bP18\\b|\\bA80s\\b|\\bA11s\\b|\\bP88HD\\b|\\bA80h\\b|\\bP76s\\b|\\bP76h\\b|\\bP98\\b|\\bA10HD\\b|\\bP78\\b|\\bP88\\b|\\bA11\\b|\\bA10t\\b|\\bP76a\\b|\\bP76t\\b|\\bP76e\\b|\\bP85HD\\b|\\bP85a\\b|\\bP86\\b|\\bP75HD\\b|\\bP76v\\b|\\bA12\\b|\\bP75a\\b|\\bA15\\b|\\bP76Ti\\b|\\bP81HD\\b|\\bA10\\b|\\bT760VE\\b|\\bT720HD\\b|\\bP76\\b|\\bP73\\b|\\bP71\\b|\\bP72\\b|\\bT720SE\\b|\\bC520Ti\\b|\\bT760\\b|\\bT720VE\\b|T720-3GE|T720-WiFi",
-        "OndaTablet": "\\b(V975i|Vi30|VX530|V701|Vi60|V701s|Vi50|V801s|V719|Vx610w|VX610W|V819i|Vi10|VX580W|Vi10|V711s|V813|V811|V820w|V820|Vi20|V711|VI30W|V712|V891w|V972|V819w|V820w|Vi60|V820w|V711|V813s|V801|V819|V975s|V801|V819|V819|V818|V811|V712|V975m|V101w|V961w|V812|V818|V971|V971s|V919|V989|V116w|V102w|V973|Vi40)\\b[\\s]+",
-        "JaytechTablet": "TPC-PA762",
-        "BlaupunktTablet": "Endeavour 800NG|Endeavour 1010",
-        "DigmaTablet": "\\b(iDx10|iDx9|iDx8|iDx7|iDxD7|iDxD8|iDsQ8|iDsQ7|iDsQ8|iDsD10|iDnD7|3TS804H|iDsQ11|iDj7|iDs10)\\b",
-        "EvolioTablet": "ARIA_Mini_wifi|Aria[ _]Mini|Evolio X10|Evolio X7|Evolio X8|\\bEvotab\\b|\\bNeura\\b",
-        "LavaTablet": "QPAD E704|\\bIvoryS\\b|E-TAB IVORY|\\bE-TAB\\b",
-        "AocTablet": "MW0811|MW0812|MW0922|MTK8382|MW1031|MW0831|MW0821|MW0931|MW0712",
-        "MpmanTablet": "MP11 OCTA|MP10 OCTA|MPQC1114|MPQC1004|MPQC994|MPQC974|MPQC973|MPQC804|MPQC784|MPQC780|\\bMPG7\\b|MPDCG75|MPDCG71|MPDC1006|MP101DC|MPDC9000|MPDC905|MPDC706HD|MPDC706|MPDC705|MPDC110|MPDC100|MPDC99|MPDC97|MPDC88|MPDC8|MPDC77|MP709|MID701|MID711|MID170|MPDC703|MPQC1010",
-        "CelkonTablet": "CT695|CT888|CT[\\s]?910|CT7 Tab|CT9 Tab|CT3 Tab|CT2 Tab|CT1 Tab|C820|C720|\\bCT-1\\b",
-        "WolderTablet": "miTab \\b(DIAMOND|SPACE|BROOKLYN|NEO|FLY|MANHATTAN|FUNK|EVOLUTION|SKY|GOCAR|IRON|GENIUS|POP|MINT|EPSILON|BROADWAY|JUMP|HOP|LEGEND|NEW AGE|LINE|ADVANCE|FEEL|FOLLOW|LIKE|LINK|LIVE|THINK|FREEDOM|CHICAGO|CLEVELAND|BALTIMORE-GH|IOWA|BOSTON|SEATTLE|PHOENIX|DALLAS|IN 101|MasterChef)\\b",
-        "MiTablet": "\\bMI PAD\\b|\\bHM NOTE 1W\\b",
-        "NibiruTablet": "Nibiru M1|Nibiru Jupiter One",
-        "NexoTablet": "NEXO NOVA|NEXO 10|NEXO AVIO|NEXO FREE|NEXO GO|NEXO EVO|NEXO 3G|NEXO SMART|NEXO KIDDO|NEXO MOBI",
-        "LeaderTablet": "TBLT10Q|TBLT10I|TBL-10WDKB|TBL-10WDKBO2013|TBL-W230V2|TBL-W450|TBL-W500|SV572|TBLT7I|TBA-AC7-8G|TBLT79|TBL-8W16|TBL-10W32|TBL-10WKB|TBL-W100",
-        "UbislateTablet": "UbiSlate[\\s]?7C",
-        "PocketBookTablet": "Pocketbook",
-        "KocasoTablet": "\\b(TB-1207)\\b",
-        "HisenseTablet": "\\b(F5281|E2371)\\b",
-        "Hudl": "Hudl HT7S3|Hudl 2",
-        "TelstraTablet": "T-Hub2",
-        "GenericTablet": "Android.*\\b97D\\b|Tablet(?!.*PC)|BNTV250A|MID-WCDMA|LogicPD Zoom2|\\bA7EB\\b|CatNova8|A1_07|CT704|CT1002|\\bM721\\b|rk30sdk|\\bEVOTAB\\b|M758A|ET904|ALUMIUM10|Smartfren Tab|Endeavour 1010|Tablet-PC-4|Tagi Tab|\\bM6pro\\b|CT1020W|arc 10HD|\\bTP750\\b|\\bQTAQZ3\\b"
-    },
-    "oss": {
-        "AndroidOS": "Android",
-        "BlackBerryOS": "blackberry|\\bBB10\\b|rim tablet os",
-        "PalmOS": "PalmOS|avantgo|blazer|elaine|hiptop|palm|plucker|xiino",
-        "SymbianOS": "Symbian|SymbOS|Series60|Series40|SYB-[0-9]+|\\bS60\\b",
-        "WindowsMobileOS": "Windows CE.*(PPC|Smartphone|Mobile|[0-9]{3}x[0-9]{3})|Window Mobile|Windows Phone [0-9.]+|WCE;",
-        "WindowsPhoneOS": "Windows Phone 10.0|Windows Phone 8.1|Windows Phone 8.0|Windows Phone OS|XBLWP7|ZuneWP7|Windows NT 6.[23]; ARM;",
-        "iOS": "\\biPhone.*Mobile|\\biPod|\\biPad",
-        "MeeGoOS": "MeeGo",
-        "MaemoOS": "Maemo",
-        "JavaOS": "J2ME\/|\\bMIDP\\b|\\bCLDC\\b",
-        "webOS": "webOS|hpwOS",
-        "badaOS": "\\bBada\\b",
-        "BREWOS": "BREW"
-    },
-    "uas": {
-        "Chrome": "\\bCrMo\\b|CriOS|Android.*Chrome\/[.0-9]* (Mobile)?",
-        "Dolfin": "\\bDolfin\\b",
-        "Opera": "Opera.*Mini|Opera.*Mobi|Android.*Opera|Mobile.*OPR\/[0-9.]+|Coast\/[0-9.]+",
-        "Skyfire": "Skyfire",
-        "Edge": "Mobile Safari\/[.0-9]* Edge",
-        "IE": "IEMobile|MSIEMobile",
-        "Firefox": "fennec|firefox.*maemo|(Mobile|Tablet).*Firefox|Firefox.*Mobile|FxiOS",
-        "Bolt": "bolt",
-        "TeaShark": "teashark",
-        "Blazer": "Blazer",
-        "Safari": "Version.*Mobile.*Safari|Safari.*Mobile|MobileSafari",
-        "UCBrowser": "UC.*Browser|UCWEB",
-        "baiduboxapp": "baiduboxapp",
-        "baidubrowser": "baidubrowser",
-        "DiigoBrowser": "DiigoBrowser",
-        "Puffin": "Puffin",
-        "Mercury": "\\bMercury\\b",
-        "ObigoBrowser": "Obigo",
-        "NetFront": "NF-Browser",
-        "GenericBrowser": "NokiaBrowser|OviBrowser|OneBrowser|TwonkyBeamBrowser|SEMC.*Browser|FlyFlow|Minimo|NetFront|Novarra-Vision|MQQBrowser|MicroMessenger",
-        "PaleMoon": "Android.*PaleMoon|Mobile.*PaleMoon"
-    },
-    "props": {
-        "Mobile": "Mobile\/[VER]",
-        "Build": "Build\/[VER]",
-        "Version": "Version\/[VER]",
-        "VendorID": "VendorID\/[VER]",
-        "iPad": "iPad.*CPU[a-z ]+[VER]",
-        "iPhone": "iPhone.*CPU[a-z ]+[VER]",
-        "iPod": "iPod.*CPU[a-z ]+[VER]",
-        "Kindle": "Kindle\/[VER]",
-        "Chrome": [
-            "Chrome\/[VER]",
-            "CriOS\/[VER]",
-            "CrMo\/[VER]"
-        ],
-        "Coast": [
-            "Coast\/[VER]"
-        ],
-        "Dolfin": "Dolfin\/[VER]",
-        "Firefox": [
-            "Firefox\/[VER]",
-            "FxiOS\/[VER]"
-        ],
-        "Fennec": "Fennec\/[VER]",
-        "Edge": "Edge\/[VER]",
-        "IE": [
-            "IEMobile\/[VER];",
-            "IEMobile [VER]",
-            "MSIE [VER];",
-            "Trident\/[0-9.]+;.*rv:[VER]"
-        ],
-        "NetFront": "NetFront\/[VER]",
-        "NokiaBrowser": "NokiaBrowser\/[VER]",
-        "Opera": [
-            " OPR\/[VER]",
-            "Opera Mini\/[VER]",
-            "Version\/[VER]"
-        ],
-        "Opera Mini": "Opera Mini\/[VER]",
-        "Opera Mobi": "Version\/[VER]",
-        "UC Browser": "UC Browser[VER]",
-        "MQQBrowser": "MQQBrowser\/[VER]",
-        "MicroMessenger": "MicroMessenger\/[VER]",
-        "baiduboxapp": "baiduboxapp\/[VER]",
-        "baidubrowser": "baidubrowser\/[VER]",
-        "SamsungBrowser": "SamsungBrowser\/[VER]",
-        "Iron": "Iron\/[VER]",
-        "Safari": [
-            "Version\/[VER]",
-            "Safari\/[VER]"
-        ],
-        "Skyfire": "Skyfire\/[VER]",
-        "Tizen": "Tizen\/[VER]",
-        "Webkit": "webkit[ \/][VER]",
-        "PaleMoon": "PaleMoon\/[VER]",
-        "Gecko": "Gecko\/[VER]",
-        "Trident": "Trident\/[VER]",
-        "Presto": "Presto\/[VER]",
-        "Goanna": "Goanna\/[VER]",
-        "iOS": " \\bi?OS\\b [VER][ ;]{1}",
-        "Android": "Android [VER]",
-        "BlackBerry": [
-            "BlackBerry[\\w]+\/[VER]",
-            "BlackBerry.*Version\/[VER]",
-            "Version\/[VER]"
-        ],
-        "BREW": "BREW [VER]",
-        "Java": "Java\/[VER]",
-        "Windows Phone OS": [
-            "Windows Phone OS [VER]",
-            "Windows Phone [VER]"
-        ],
-        "Windows Phone": "Windows Phone [VER]",
-        "Windows CE": "Windows CE\/[VER]",
-        "Windows NT": "Windows NT [VER]",
-        "Symbian": [
-            "SymbianOS\/[VER]",
-            "Symbian\/[VER]"
-        ],
-        "webOS": [
-            "webOS\/[VER]",
-            "hpwOS\/[VER];"
-        ]
-    },
-    "utils": {
-        "Bot": "Googlebot|facebookexternalhit|AdsBot-Google|Google Keyword Suggestion|Facebot|YandexBot|YandexMobileBot|bingbot|ia_archiver|AhrefsBot|Ezooms|GSLFbot|WBSearchBot|Twitterbot|TweetmemeBot|Twikle|PaperLiBot|Wotbox|UnwindFetchor|Exabot|MJ12bot|YandexImages|TurnitinBot|Pingdom",
-        "MobileBot": "Googlebot-Mobile|AdsBot-Google-Mobile|YahooSeeker\/M1A1-R2D2",
-        "DesktopMode": "WPDesktop",
-        "TV": "SonyDTV|HbbTV",
-        "WebKit": "(webkit)[ \/]([\\w.]+)",
-        "Console": "\\b(Nintendo|Nintendo WiiU|Nintendo 3DS|PLAYSTATION|Xbox)\\b",
-        "Watch": "SM-V700"
-    }
-};
-
-    // following patterns come from http://detectmobilebrowsers.com/
-    impl.detectMobileBrowsers = {
-        fullPattern: /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i,
-        shortPattern: /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i,
-        tabletPattern: /android|ipad|playbook|silk/i
-    };
-
-    var hasOwnProp = Object.prototype.hasOwnProperty,
-        isArray;
-
-    impl.FALLBACK_PHONE = 'UnknownPhone';
-    impl.FALLBACK_TABLET = 'UnknownTablet';
-    impl.FALLBACK_MOBILE = 'UnknownMobile';
-
-    isArray = ('isArray' in Array) ?
-        Array.isArray : function (value) { return Object.prototype.toString.call(value) === '[object Array]'; };
-
-    function equalIC(a, b) {
-        return a != null && b != null && a.toLowerCase() === b.toLowerCase();
-    }
-
-    function containsIC(array, value) {
-        var valueLC, i, len = array.length;
-        if (!len || !value) {
-            return false;
-        }
-        valueLC = value.toLowerCase();
-        for (i = 0; i < len; ++i) {
-            if (valueLC === array[i].toLowerCase()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    function convertPropsToRegExp(object) {
-        for (var key in object) {
-            if (hasOwnProp.call(object, key)) {
-                object[key] = new RegExp(object[key], 'i');
-            }
-        }
-    }
-
-    (function init() {
-        var key, values, value, i, len, verPos, mobileDetectRules = impl.mobileDetectRules;
-        for (key in mobileDetectRules.props) {
-            if (hasOwnProp.call(mobileDetectRules.props, key)) {
-                values = mobileDetectRules.props[key];
-                if (!isArray(values)) {
-                    values = [values];
-                }
-                len = values.length;
-                for (i = 0; i < len; ++i) {
-                    value = values[i];
-                    verPos = value.indexOf('[VER]');
-                    if (verPos >= 0) {
-                        value = value.substring(0, verPos) + '([\\w._\\+]+)' + value.substring(verPos + 5);
-                    }
-                    values[i] = new RegExp(value, 'i');
-                }
-                mobileDetectRules.props[key] = values;
-            }
-        }
-        convertPropsToRegExp(mobileDetectRules.oss);
-        convertPropsToRegExp(mobileDetectRules.phones);
-        convertPropsToRegExp(mobileDetectRules.tablets);
-        convertPropsToRegExp(mobileDetectRules.uas);
-        convertPropsToRegExp(mobileDetectRules.utils);
-
-        // copy some patterns to oss0 which are tested first (see issue#15)
-        mobileDetectRules.oss0 = {
-            WindowsPhoneOS: mobileDetectRules.oss.WindowsPhoneOS,
-            WindowsMobileOS: mobileDetectRules.oss.WindowsMobileOS
-        };
-    }());
-
-    /**
-     * Test userAgent string against a set of rules and find the first matched key.
-     * @param {Object} rules (key is String, value is RegExp)
-     * @param {String} userAgent the navigator.userAgent (or HTTP-Header 'User-Agent').
-     * @returns {String|null} the matched key if found, otherwise <tt>null</tt>
-     * @private
-     */
-    impl.findMatch = function(rules, userAgent) {
-        for (var key in rules) {
-            if (hasOwnProp.call(rules, key)) {
-                if (rules[key].test(userAgent)) {
-                    return key;
-                }
-            }
-        }
-        return null;
-    };
-
-    /**
-     * Test userAgent string against a set of rules and return an array of matched keys.
-     * @param {Object} rules (key is String, value is RegExp)
-     * @param {String} userAgent the navigator.userAgent (or HTTP-Header 'User-Agent').
-     * @returns {Array} an array of matched keys, may be empty when there is no match, but not <tt>null</tt>
-     * @private
-     */
-    impl.findMatches = function(rules, userAgent) {
-        var result = [];
-        for (var key in rules) {
-            if (hasOwnProp.call(rules, key)) {
-                if (rules[key].test(userAgent)) {
-                    result.push(key);
-                }
-            }
-        }
-        return result;
-    };
-
-    /**
-     * Check the version of the given property in the User-Agent.
-     *
-     * @param {String} propertyName
-     * @param {String} userAgent
-     * @return {String} version or <tt>null</tt> if version not found
-     * @private
-     */
-    impl.getVersionStr = function (propertyName, userAgent) {
-        var props = impl.mobileDetectRules.props, patterns, i, len, match;
-        if (hasOwnProp.call(props, propertyName)) {
-            patterns = props[propertyName];
-            len = patterns.length;
-            for (i = 0; i < len; ++i) {
-                match = patterns[i].exec(userAgent);
-                if (match !== null) {
-                    return match[1];
-                }
-            }
-        }
-        return null;
-    };
-
-    /**
-     * Check the version of the given property in the User-Agent.
-     * Will return a float number. (eg. 2_0 will return 2.0, 4.3.1 will return 4.31)
-     *
-     * @param {String} propertyName
-     * @param {String} userAgent
-     * @return {Number} version or <tt>NaN</tt> if version not found
-     * @private
-     */
-    impl.getVersion = function (propertyName, userAgent) {
-        var version = impl.getVersionStr(propertyName, userAgent);
-        return version ? impl.prepareVersionNo(version) : NaN;
-    };
-
-    /**
-     * Prepare the version number.
-     *
-     * @param {String} version
-     * @return {Number} the version number as a floating number
-     * @private
-     */
-    impl.prepareVersionNo = function (version) {
-        var numbers;
-
-        numbers = version.split(/[a-z._ \/\-]/i);
-        if (numbers.length === 1) {
-            version = numbers[0];
-        }
-        if (numbers.length > 1) {
-            version = numbers[0] + '.';
-            numbers.shift();
-            version += numbers.join('');
-        }
-        return Number(version);
-    };
-
-    impl.isMobileFallback = function (userAgent) {
-        return impl.detectMobileBrowsers.fullPattern.test(userAgent) ||
-            impl.detectMobileBrowsers.shortPattern.test(userAgent.substr(0,4));
-    };
-
-    impl.isTabletFallback = function (userAgent) {
-        return impl.detectMobileBrowsers.tabletPattern.test(userAgent);
-    };
-
-    impl.prepareDetectionCache = function (cache, userAgent, maxPhoneWidth) {
-        if (cache.mobile !== undefined) {
-            return;
-        }
-        var phone, tablet, phoneSized;
-
-        // first check for stronger tablet rules, then phone (see issue#5)
-        tablet = impl.findMatch(impl.mobileDetectRules.tablets, userAgent);
-        if (tablet) {
-            cache.mobile = cache.tablet = tablet;
-            cache.phone = null;
-            return; // unambiguously identified as tablet
-        }
-
-        phone = impl.findMatch(impl.mobileDetectRules.phones, userAgent);
-        if (phone) {
-            cache.mobile = cache.phone = phone;
-            cache.tablet = null;
-            return; // unambiguously identified as phone
-        }
-
-        // our rules haven't found a match -> try more general fallback rules
-        if (impl.isMobileFallback(userAgent)) {
-            phoneSized = MobileDetect.isPhoneSized(maxPhoneWidth);
-            if (phoneSized === undefined) {
-                cache.mobile = impl.FALLBACK_MOBILE;
-                cache.tablet = cache.phone = null;
-            } else if (phoneSized) {
-                cache.mobile = cache.phone = impl.FALLBACK_PHONE;
-                cache.tablet = null;
-            } else {
-                cache.mobile = cache.tablet = impl.FALLBACK_TABLET;
-                cache.phone = null;
-            }
-        } else if (impl.isTabletFallback(userAgent)) {
-            cache.mobile = cache.tablet = impl.FALLBACK_TABLET;
-            cache.phone = null;
-        } else {
-            // not mobile at all!
-            cache.mobile = cache.tablet = cache.phone = null;
-        }
-    };
-
-    // t is a reference to a MobileDetect instance
-    impl.mobileGrade = function (t) {
-        // impl note:
-        // To keep in sync w/ Mobile_Detect.php easily, the following code is tightly aligned to the PHP version.
-        // When changes are made in Mobile_Detect.php, copy this method and replace:
-        //     $this-> / t.
-        //     self::MOBILE_GRADE_(.) / '$1'
-        //     , self::VERSION_TYPE_FLOAT / (nothing)
-        //     isIOS() / os('iOS')
-        //     [reg] / (nothing)   <-- jsdelivr complaining about unescaped unicode character U+00AE
-        var $isMobile = t.mobile() !== null;
-
-        if (
-            // Apple iOS 3.2-5.1 - Tested on the original iPad (4.3 / 5.0), iPad 2 (4.3), iPad 3 (5.1), original iPhone (3.1), iPhone 3 (3.2), 3GS (4.3), 4 (4.3 / 5.0), and 4S (5.1)
-            t.os('iOS') && t.version('iPad')>=4.3 ||
-            t.os('iOS') && t.version('iPhone')>=3.1 ||
-            t.os('iOS') && t.version('iPod')>=3.1 ||
-
-            // Android 2.1-2.3 - Tested on the HTC Incredible (2.2), original Droid (2.2), HTC Aria (2.1), Google Nexus S (2.3). Functional on 1.5 & 1.6 but performance may be sluggish, tested on Google G1 (1.5)
-            // Android 3.1 (Honeycomb)  - Tested on the Samsung Galaxy Tab 10.1 and Motorola XOOM
-            // Android 4.0 (ICS)  - Tested on a Galaxy Nexus. Note: transition performance can be poor on upgraded devices
-            // Android 4.1 (Jelly Bean)  - Tested on a Galaxy Nexus and Galaxy 7
-            ( t.version('Android')>2.1 && t.is('Webkit') ) ||
-
-            // Windows Phone 7-7.5 - Tested on the HTC Surround (7.0) HTC Trophy (7.5), LG-E900 (7.5), Nokia Lumia 800
-            t.version('Windows Phone OS')>=7.0 ||
-
-            // Blackberry 7 - Tested on BlackBerry Torch 9810
-            // Blackberry 6.0 - Tested on the Torch 9800 and Style 9670
-            t.is('BlackBerry') && t.version('BlackBerry')>=6.0 ||
-            // Blackberry Playbook (1.0-2.0) - Tested on PlayBook
-            t.match('Playbook.*Tablet') ||
-
-            // Palm WebOS (1.4-2.0) - Tested on the Palm Pixi (1.4), Pre (1.4), Pre 2 (2.0)
-            ( t.version('webOS')>=1.4 && t.match('Palm|Pre|Pixi') ) ||
-            // Palm WebOS 3.0  - Tested on HP TouchPad
-            t.match('hp.*TouchPad') ||
-
-            // Firefox Mobile (12 Beta) - Tested on Android 2.3 device
-            ( t.is('Firefox') && t.version('Firefox')>=12 ) ||
-
-            // Chrome for Android - Tested on Android 4.0, 4.1 device
-            ( t.is('Chrome') && t.is('AndroidOS') && t.version('Android')>=4.0 ) ||
-
-            // Skyfire 4.1 - Tested on Android 2.3 device
-            ( t.is('Skyfire') && t.version('Skyfire')>=4.1 && t.is('AndroidOS') && t.version('Android')>=2.3 ) ||
-
-            // Opera Mobile 11.5-12: Tested on Android 2.3
-            ( t.is('Opera') && t.version('Opera Mobi')>11 && t.is('AndroidOS') ) ||
-
-            // Meego 1.2 - Tested on Nokia 950 and N9
-            t.is('MeeGoOS') ||
-
-            // Tizen (pre-release) - Tested on early hardware
-            t.is('Tizen') ||
-
-            // Samsung Bada 2.0 - Tested on a Samsung Wave 3, Dolphin browser
-            // @todo: more tests here!
-            t.is('Dolfin') && t.version('Bada')>=2.0 ||
-
-            // UC Browser - Tested on Android 2.3 device
-            ( (t.is('UC Browser') || t.is('Dolfin')) && t.version('Android')>=2.3 ) ||
-
-            // Kindle 3 and Fire  - Tested on the built-in WebKit browser for each
-            ( t.match('Kindle Fire') ||
-                t.is('Kindle') && t.version('Kindle')>=3.0 ) ||
-
-            // Nook Color 1.4.1 - Tested on original Nook Color, not Nook Tablet
-            t.is('AndroidOS') && t.is('NookTablet') ||
-
-            // Chrome Desktop 11-21 - Tested on OS X 10.7 and Windows 7
-            t.version('Chrome')>=11 && !$isMobile ||
-
-            // Safari Desktop 4-5 - Tested on OS X 10.7 and Windows 7
-            t.version('Safari')>=5.0 && !$isMobile ||
-
-            // Firefox Desktop 4-13 - Tested on OS X 10.7 and Windows 7
-            t.version('Firefox')>=4.0 && !$isMobile ||
-
-            // Internet Explorer 7-9 - Tested on Windows XP, Vista and 7
-            t.version('MSIE')>=7.0 && !$isMobile ||
-
-            // Opera Desktop 10-12 - Tested on OS X 10.7 and Windows 7
-            // @reference: http://my.opera.com/community/openweb/idopera/
-            t.version('Opera')>=10 && !$isMobile
-
-            ){
-            return 'A';
-        }
-
-        if (
-            t.os('iOS') && t.version('iPad')<4.3 ||
-            t.os('iOS') && t.version('iPhone')<3.1 ||
-            t.os('iOS') && t.version('iPod')<3.1 ||
-
-            // Blackberry 5.0: Tested on the Storm 2 9550, Bold 9770
-            t.is('Blackberry') && t.version('BlackBerry')>=5 && t.version('BlackBerry')<6 ||
-
-            //Opera Mini (5.0-6.5) - Tested on iOS 3.2/4.3 and Android 2.3
-            ( t.version('Opera Mini')>=5.0 && t.version('Opera Mini')<=6.5 &&
-                (t.version('Android')>=2.3 || t.is('iOS')) ) ||
-
-            // Nokia Symbian^3 - Tested on Nokia N8 (Symbian^3), C7 (Symbian^3), also works on N97 (Symbian^1)
-            t.match('NokiaN8|NokiaC7|N97.*Series60|Symbian/3') ||
-
-            // @todo: report this (tested on Nokia N71)
-            t.version('Opera Mobi')>=11 && t.is('SymbianOS')
-            ){
-            return 'B';
-        }
-
-        if (
-        // Blackberry 4.x - Tested on the Curve 8330
-            t.version('BlackBerry')<5.0 ||
-            // Windows Mobile - Tested on the HTC Leo (WinMo 5.2)
-            t.match('MSIEMobile|Windows CE.*Mobile') || t.version('Windows Mobile')<=5.2
-
-            ){
-            return 'C';
-        }
-
-        //All older smartphone platforms and featurephones - Any device that doesn't support media queries
-        //will receive the basic, C grade experience.
-        return 'C';
-    };
-
-    impl.detectOS = function (ua) {
-        return impl.findMatch(impl.mobileDetectRules.oss0, ua) ||
-            impl.findMatch(impl.mobileDetectRules.oss, ua);
-    };
-
-    impl.getDeviceSmallerSide = function () {
-        return window.screen.width < window.screen.height ?
-            window.screen.width :
-            window.screen.height;
-    };
-
-    /**
-     * Constructor for MobileDetect object.
-     * <br>
-     * Such an object will keep a reference to the given user-agent string and cache most of the detect queries.<br>
-     * <div style="background-color: #d9edf7; border: 1px solid #bce8f1; color: #3a87ad; padding: 14px; border-radius: 2px; margin-top: 20px">
-     *     <strong>Find information how to download and install:</strong>
-     *     <a href="https://github.com/hgoebl/mobile-detect.js/">github.com/hgoebl/mobile-detect.js/</a>
-     * </div>
-     *
-     * @example <pre>
-     *     var md = new MobileDetect(window.navigator.userAgent);
-     *     if (md.mobile()) {
-     *         location.href = (md.mobileGrade() === 'A') ? '/mobile/' : '/lynx/';
-     *     }
-     * </pre>
-     *
-     * @param {string} userAgent typically taken from window.navigator.userAgent or http_header['User-Agent']
-     * @param {number} [maxPhoneWidth=600] <strong>only for browsers</strong> specify a value for the maximum
-     *        width of smallest device side (in logical "CSS" pixels) until a device detected as mobile will be handled
-     *        as phone.
-     *        This is only used in cases where the device cannot be classified as phone or tablet.<br>
-     *        See <a href="http://developer.android.com/guide/practices/screens_support.html">Declaring Tablet Layouts
-     *        for Android</a>.<br>
-     *        If you provide a value < 0, then this "fuzzy" check is disabled.
-     * @constructor
-     * @global
-     */
-    function MobileDetect(userAgent, maxPhoneWidth) {
-        this.ua = userAgent || '';
-        this._cache = {};
-        //600dp is typical 7" tablet minimum width
-        this.maxPhoneWidth = maxPhoneWidth || 600;
-    }
-
-    MobileDetect.prototype = {
-        constructor: MobileDetect,
-
-        /**
-         * Returns the detected phone or tablet type or <tt>null</tt> if it is not a mobile device.
-         * <br>
-         * For a list of possible return values see {@link MobileDetect#phone} and {@link MobileDetect#tablet}.<br>
-         * <br>
-         * If the device is not detected by the regular expressions from Mobile-Detect, a test is made against
-         * the patterns of <a href="http://detectmobilebrowsers.com/">detectmobilebrowsers.com</a>. If this test
-         * is positive, a value of <code>UnknownPhone</code>, <code>UnknownTablet</code> or
-         * <code>UnknownMobile</code> is returned.<br>
-         * When used in browser, the decision whether phone or tablet is made based on <code>screen.width/height</code>.<br>
-         * <br>
-         * When used server-side (node.js), there is no way to tell the difference between <code>UnknownTablet</code>
-         * and <code>UnknownMobile</code>, so you will get <code>UnknownMobile</code> here.<br>
-         * Be aware that since v1.0.0 in this special case you will get <code>UnknownMobile</code> only for:
-         * {@link MobileDetect#mobile}, not for {@link MobileDetect#phone} and {@link MobileDetect#tablet}.
-         * In versions before v1.0.0 all 3 methods returned <code>UnknownMobile</code> which was tedious to use.
-         * <br>
-         * In most cases you will use the return value just as a boolean.
-         *
-         * @returns {String} the key for the phone family or tablet family, e.g. "Nexus".
-         * @function MobileDetect#mobile
-         */
-        mobile: function () {
-            impl.prepareDetectionCache(this._cache, this.ua, this.maxPhoneWidth);
-            return this._cache.mobile;
-        },
-
-        /**
-         * Returns the detected phone type/family string or <tt>null</tt>.
-         * <br>
-         * The returned tablet (family or producer) is one of following keys:<br>
-         * <br><tt>iPhone, BlackBerry, HTC, Nexus, Dell, Motorola, Samsung, LG, Sony, Asus,
-         * NokiaLumia, Micromax, Palm, Vertu, Pantech, Fly, Wiko, iMobile, SimValley,
-         * Wolfgang, Alcatel, Nintendo, Amoi, INQ, GenericPhone</tt><br>
-         * <br>
-         * If the device is not detected by the regular expressions from Mobile-Detect, a test is made against
-         * the patterns of <a href="http://detectmobilebrowsers.com/">detectmobilebrowsers.com</a>. If this test
-         * is positive, a value of <code>UnknownPhone</code> or <code>UnknownMobile</code> is returned.<br>
-         * When used in browser, the decision whether phone or tablet is made based on <code>screen.width/height</code>.<br>
-         * <br>
-         * When used server-side (node.js), there is no way to tell the difference between <code>UnknownTablet</code>
-         * and <code>UnknownMobile</code>, so you will get <code>null</code> here, while {@link MobileDetect#mobile}
-         * will return <code>UnknownMobile</code>.<br>
-         * Be aware that since v1.0.0 in this special case you will get <code>UnknownMobile</code> only for:
-         * {@link MobileDetect#mobile}, not for {@link MobileDetect#phone} and {@link MobileDetect#tablet}.
-         * In versions before v1.0.0 all 3 methods returned <code>UnknownMobile</code> which was tedious to use.
-         * <br>
-         * In most cases you will use the return value just as a boolean.
-         *
-         * @returns {String} the key of the phone family or producer, e.g. "iPhone"
-         * @function MobileDetect#phone
-         */
-        phone: function () {
-            impl.prepareDetectionCache(this._cache, this.ua, this.maxPhoneWidth);
-            return this._cache.phone;
-        },
-
-        /**
-         * Returns the detected tablet type/family string or <tt>null</tt>.
-         * <br>
-         * The returned tablet (family or producer) is one of following keys:<br>
-         * <br><tt>iPad, NexusTablet, SamsungTablet, Kindle, SurfaceTablet, HPTablet, AsusTablet,
-         * BlackBerryTablet, HTCtablet, MotorolaTablet, NookTablet, AcerTablet,
-         * ToshibaTablet, LGTablet, FujitsuTablet, PrestigioTablet, LenovoTablet,
-         * DellTablet, YarvikTablet, MedionTablet, ArnovaTablet, IntensoTablet, IRUTablet,
-         * MegafonTablet, EbodaTablet, AllViewTablet, ArchosTablet, AinolTablet,
-         * NokiaLumiaTablet, SonyTablet, PhilipsTablet, CubeTablet, CobyTablet, MIDTablet,
-         * MSITablet, SMiTTablet, RockChipTablet, FlyTablet, bqTablet, HuaweiTablet,
-         * NecTablet, PantechTablet, BronchoTablet, VersusTablet, ZyncTablet,
-         * PositivoTablet, NabiTablet, KoboTablet, DanewTablet, TexetTablet,
-         * PlaystationTablet, TrekstorTablet, PyleAudioTablet, AdvanTablet,
-         * DanyTechTablet, GalapadTablet, MicromaxTablet, KarbonnTablet, AllFineTablet,
-         * PROSCANTablet, YONESTablet, ChangJiaTablet, GUTablet, PointOfViewTablet,
-         * OvermaxTablet, HCLTablet, DPSTablet, VistureTablet, CrestaTablet,
-         * MediatekTablet, ConcordeTablet, GoCleverTablet, ModecomTablet, VoninoTablet,
-         * ECSTablet, StorexTablet, VodafoneTablet, EssentielBTablet, RossMoorTablet,
-         * iMobileTablet, TolinoTablet, AudioSonicTablet, AMPETablet, SkkTablet,
-         * TecnoTablet, JXDTablet, iJoyTablet, FX2Tablet, XoroTablet, ViewsonicTablet,
-         * OdysTablet, CaptivaTablet, IconbitTablet, TeclastTablet, OndaTablet,
-         * JaytechTablet, BlaupunktTablet, DigmaTablet, EvolioTablet, LavaTablet,
-         * AocTablet, MpmanTablet, CelkonTablet, WolderTablet, MiTablet, NibiruTablet,
-         * NexoTablet, LeaderTablet, UbislateTablet, PocketBookTablet, KocasoTablet,
-         * HisenseTablet, Hudl, TelstraTablet, GenericTablet</tt><br>
-         * <br>
-         * If the device is not detected by the regular expressions from Mobile-Detect, a test is made against
-         * the patterns of <a href="http://detectmobilebrowsers.com/">detectmobilebrowsers.com</a>. If this test
-         * is positive, a value of <code>UnknownTablet</code> or <code>UnknownMobile</code> is returned.<br>
-         * When used in browser, the decision whether phone or tablet is made based on <code>screen.width/height</code>.<br>
-         * <br>
-         * When used server-side (node.js), there is no way to tell the difference between <code>UnknownTablet</code>
-         * and <code>UnknownMobile</code>, so you will get <code>null</code> here, while {@link MobileDetect#mobile}
-         * will return <code>UnknownMobile</code>.<br>
-         * Be aware that since v1.0.0 in this special case you will get <code>UnknownMobile</code> only for:
-         * {@link MobileDetect#mobile}, not for {@link MobileDetect#phone} and {@link MobileDetect#tablet}.
-         * In versions before v1.0.0 all 3 methods returned <code>UnknownMobile</code> which was tedious to use.
-         * <br>
-         * In most cases you will use the return value just as a boolean.
-         *
-         * @returns {String} the key of the tablet family or producer, e.g. "SamsungTablet"
-         * @function MobileDetect#tablet
-         */
-        tablet: function () {
-            impl.prepareDetectionCache(this._cache, this.ua, this.maxPhoneWidth);
-            return this._cache.tablet;
-        },
-
-        /**
-         * Returns the (first) detected user-agent string or <tt>null</tt>.
-         * <br>
-         * The returned user-agent is one of following keys:<br>
-         * <br><tt>Chrome, Dolfin, Opera, Skyfire, Edge, IE, Firefox, Bolt, TeaShark, Blazer,
-         * Safari, UCBrowser, baiduboxapp, baidubrowser, DiigoBrowser, Puffin, Mercury,
-         * ObigoBrowser, NetFront, GenericBrowser, PaleMoon</tt><br>
-         * <br>
-         * In most cases calling {@link MobileDetect#userAgent} will be sufficient. But there are rare
-         * cases where a mobile device pretends to be more than one particular browser. You can get the
-         * list of all matches with {@link MobileDetect#userAgents} or check for a particular value by
-         * providing one of the defined keys as first argument to {@link MobileDetect#is}.
-         *
-         * @returns {String} the key for the detected user-agent or <tt>null</tt>
-         * @function MobileDetect#userAgent
-         */
-        userAgent: function () {
-            if (this._cache.userAgent === undefined) {
-                this._cache.userAgent = impl.findMatch(impl.mobileDetectRules.uas, this.ua);
-            }
-            return this._cache.userAgent;
-        },
-
-        /**
-         * Returns all detected user-agent strings.
-         * <br>
-         * The array is empty or contains one or more of following keys:<br>
-         * <br><tt>Chrome, Dolfin, Opera, Skyfire, Edge, IE, Firefox, Bolt, TeaShark, Blazer,
-         * Safari, UCBrowser, baiduboxapp, baidubrowser, DiigoBrowser, Puffin, Mercury,
-         * ObigoBrowser, NetFront, GenericBrowser, PaleMoon</tt><br>
-         * <br>
-         * In most cases calling {@link MobileDetect#userAgent} will be sufficient. But there are rare
-         * cases where a mobile device pretends to be more than one particular browser. You can get the
-         * list of all matches with {@link MobileDetect#userAgents} or check for a particular value by
-         * providing one of the defined keys as first argument to {@link MobileDetect#is}.
-         *
-         * @returns {Array} the array of detected user-agent keys or <tt>[]</tt>
-         * @function MobileDetect#userAgents
-         */
-        userAgents: function () {
-            if (this._cache.userAgents === undefined) {
-                this._cache.userAgents = impl.findMatches(impl.mobileDetectRules.uas, this.ua);
-            }
-            return this._cache.userAgents;
-        },
-
-        /**
-         * Returns the detected operating system string or <tt>null</tt>.
-         * <br>
-         * The operating system is one of following keys:<br>
-         * <br><tt>AndroidOS, BlackBerryOS, PalmOS, SymbianOS, WindowsMobileOS, WindowsPhoneOS,
-         * iOS, MeeGoOS, MaemoOS, JavaOS, webOS, badaOS, BREWOS</tt><br>
-         *
-         * @returns {String} the key for the detected operating system.
-         * @function MobileDetect#os
-         */
-        os: function () {
-            if (this._cache.os === undefined) {
-                this._cache.os = impl.detectOS(this.ua);
-            }
-            return this._cache.os;
-        },
-
-        /**
-         * Get the version (as Number) of the given property in the User-Agent.
-         * <br>
-         * Will return a float number. (eg. 2_0 will return 2.0, 4.3.1 will return 4.31)
-         *
-         * @param {String} key a key defining a thing which has a version.<br>
-         *        You can use one of following keys:<br>
-         * <br><tt>Mobile, Build, Version, VendorID, iPad, iPhone, iPod, Kindle, Chrome, Coast,
-         * Dolfin, Firefox, Fennec, Edge, IE, NetFront, NokiaBrowser, Opera, Opera Mini,
-         * Opera Mobi, UC Browser, MQQBrowser, MicroMessenger, baiduboxapp, baidubrowser,
-         * SamsungBrowser, Iron, Safari, Skyfire, Tizen, Webkit, PaleMoon, Gecko, Trident,
-         * Presto, Goanna, iOS, Android, BlackBerry, BREW, Java, Windows Phone OS, Windows
-         * Phone, Windows CE, Windows NT, Symbian, webOS</tt><br>
-         *
-         * @returns {Number} the version as float or <tt>NaN</tt> if User-Agent doesn't contain this version.
-         *          Be careful when comparing this value with '==' operator!
-         * @function MobileDetect#version
-         */
-        version: function (key) {
-            return impl.getVersion(key, this.ua);
-        },
-
-        /**
-         * Get the version (as String) of the given property in the User-Agent.
-         * <br>
-         *
-         * @param {String} key a key defining a thing which has a version.<br>
-         *        You can use one of following keys:<br>
-         * <br><tt>Mobile, Build, Version, VendorID, iPad, iPhone, iPod, Kindle, Chrome, Coast,
-         * Dolfin, Firefox, Fennec, Edge, IE, NetFront, NokiaBrowser, Opera, Opera Mini,
-         * Opera Mobi, UC Browser, MQQBrowser, MicroMessenger, baiduboxapp, baidubrowser,
-         * SamsungBrowser, Iron, Safari, Skyfire, Tizen, Webkit, PaleMoon, Gecko, Trident,
-         * Presto, Goanna, iOS, Android, BlackBerry, BREW, Java, Windows Phone OS, Windows
-         * Phone, Windows CE, Windows NT, Symbian, webOS</tt><br>
-         *
-         * @returns {String} the "raw" version as String or <tt>null</tt> if User-Agent doesn't contain this version.
-         *
-         * @function MobileDetect#versionStr
-         */
-        versionStr: function (key) {
-            return impl.getVersionStr(key, this.ua);
-        },
-
-        /**
-         * Global test key against userAgent, os, phone, tablet and some other properties of userAgent string.
-         *
-         * @param {String} key the key (case-insensitive) of a userAgent, an operating system, phone or
-         *        tablet family.<br>
-         *        For a complete list of possible values, see {@link MobileDetect#userAgent},
-         *        {@link MobileDetect#os}, {@link MobileDetect#phone}, {@link MobileDetect#tablet}.<br>
-         *        Additionally you have following keys:<br>
-         * <br><tt>Bot, MobileBot, DesktopMode, TV, WebKit, Console, Watch</tt><br>
-         *
-         * @returns {boolean} <tt>true</tt> when the given key is one of the defined keys of userAgent, os, phone,
-         *                    tablet or one of the listed additional keys, otherwise <tt>false</tt>
-         * @function MobileDetect#is
-         */
-        is: function (key) {
-            return containsIC(this.userAgents(), key) ||
-                   equalIC(key, this.os()) ||
-                   equalIC(key, this.phone()) ||
-                   equalIC(key, this.tablet()) ||
-                   containsIC(impl.findMatches(impl.mobileDetectRules.utils, this.ua), key);
-        },
-
-        /**
-         * Do a quick test against navigator::userAgent.
-         *
-         * @param {String|RegExp} pattern the pattern, either as String or RegExp
-         *                        (a string will be converted to a case-insensitive RegExp).
-         * @returns {boolean} <tt>true</tt> when the pattern matches, otherwise <tt>false</tt>
-         * @function MobileDetect#match
-         */
-        match: function (pattern) {
-            if (!(pattern instanceof RegExp)) {
-                pattern = new RegExp(pattern, 'i');
-            }
-            return pattern.test(this.ua);
-        },
-
-        /**
-         * Checks whether the mobile device can be considered as phone regarding <code>screen.width</code>.
-         * <br>
-         * Obviously this method makes sense in browser environments only (not for Node.js)!
-         * @param {number} [maxPhoneWidth] the maximum logical pixels (aka. CSS-pixels) to be considered as phone.<br>
-         *        The argument is optional and if not present or falsy, the value of the constructor is taken.
-         * @returns {boolean|undefined} <code>undefined</code> if screen size wasn't detectable, else <code>true</code>
-         *          when screen.width is less or equal to maxPhoneWidth, otherwise <code>false</code>.<br>
-         *          Will always return <code>undefined</code> server-side.
-         */
-        isPhoneSized: function (maxPhoneWidth) {
-            return MobileDetect.isPhoneSized(maxPhoneWidth || this.maxPhoneWidth);
-        },
-
-        /**
-         * Returns the mobile grade ('A', 'B', 'C').
-         *
-         * @returns {String} one of the mobile grades ('A', 'B', 'C').
-         * @function MobileDetect#mobileGrade
-         */
-        mobileGrade: function () {
-            if (this._cache.grade === undefined) {
-                this._cache.grade = impl.mobileGrade(this);
-            }
-            return this._cache.grade;
-        }
-    };
-
-    // environment-dependent
-    if (typeof window !== 'undefined' && window.screen) {
-        MobileDetect.isPhoneSized = function (maxPhoneWidth) {
-            return maxPhoneWidth < 0 ? undefined : impl.getDeviceSmallerSide() <= maxPhoneWidth;
-        };
-    } else {
-        MobileDetect.isPhoneSized = function () {};
-    }
-
-    // should not be replaced by a completely new object - just overwrite existing methods
-    MobileDetect._impl = impl;
-    
-    MobileDetect.version = '1.3.7 2017-09-06';
-
-    return MobileDetect;
-}); // end of call of define()
-})((function (undefined) {
-    if (typeof module !== 'undefined' && module.exports) {
-        return function (factory) { module.exports = factory(); };
-    } else if (typeof define === 'function' && define.amd) {
-        return define;
-    } else if (typeof window !== 'undefined') {
-        return function (factory) { window.MobileDetect = factory(); };
-    } else {
-        // please file a bug if you get this error!
-        throw new Error('unknown environment');
-    }
-})());
 ;
 /***************************************************************************
     modernizr-device.js,
@@ -25247,73 +24766,106 @@ define(function () {
 
     var ns = window;
 
-    var plugin_count = 1000;
-
     function ModernizrDevice( options ) {
-        this.plugin_count = plugin_count++;
-        this.VERSION = "2.2.4";
+        this.VERSION = "4.0.0";
 
         this.modernizr = Modernizr;
 
-        //Extend with device (https://github.com/matthewhudson/device.js.git)
-        $.extend( this, window.device );
-
         this.options = $.extend({
-            //Default options = Standard desttop screen
+            scale          : false, //When true: Calculate 'best' scaling of font-size
             referenceScreen: {
                 width       : 1366,
                 height      : 768,
                 diagonal_inc: 20
+            },
+            modernizr: {
+                device: false,  //When true: Add Modernizr-tests desktop mobile phone tablet
+                os    : true,   //When true: Add Modernizr-tests windows ios android
+                ie    : false   //When true: Add Modernizr-tests ie7 ie8 ie9 ie10
             }
         }, options || {} );
 
-        var docEl = document.documentElement;
-        this.wnua = window.navigator.userAgent;
-         //this.devicePixelRatio = ('devicePixelRatio' in window) ? window.devicePixelRatio : 'unsupported';
-        this.screen_width  = screen.width;
-        this.screen_height = screen.height;
+        //Extend ModernizrDevice with some of the methods from Device.js (c) 2014 Matthew Hudson http://matthewhudson.me/projects/device.js/
+
+        // The client user agent string.
+        // Lowercase, so we can use the more efficient indexOf(), instead of Regex
+        this.userAgent = window.navigator.userAgent.toLowerCase();
+
+        this.find = function(needle) { return this.userAgent.indexOf(needle) !== -1; };
+
+        // Main functions
+        this.ios                = function () { return this.iphone() || this.ipod() || this.ipad(); };
+        this.iphone             = function () { return !this.windows() && this.find('iphone'); };
+        this.ipod               = function () { return this.find('ipod'); };
+        this.ipad               = function () { return this.find('ipad'); };
+        this.android            = function () { return !this.windows() && this.find('android'); };
+        this.androidPhone       = function () { return this.android() && this.find('mobile'); };
+        this.androidTablet      = function () { return this.android() && !this.find('mobile'); };
+        this.blackberry         = function () { return this.find('blackberry') || this.find('bb10') || this.find('rim'); };
+        this.blackberryPhone    = function () { return this.blackberry() && !this.find('tablet'); };
+        this.blackberryTablet   = function () { return this.blackberry() && this.find('tablet'); };
+        this.windows            = function () { return this.find('windows'); };
+        this.windowsPhone       = function () { return this.windows() && this.find('phone'); };
+        this.windowsTablet      = function () { return this.windows() && (this.find('touch') && !this.windowsPhone()); };
+        this.fxos               = function () { return (this.find('(mobile;') || this.find('(tablet;')) && this.find('; rv:'); };
+        this.fxosPhone          = function () { return this.fxos() && this.find('mobile'); };
+        this.fxosTablet         = function () { return this.fxos() && this.find('tablet'); };
+        this.meego              = function () { return this.find('meego'); };
+        this.cordova            = function () { return window.cordova && location.protocol === 'file:'; };
+        this.nodeWebkit         = function () { return typeof window.process === 'object';  };
+        this.mobile             = function () { return this.androidPhone() || this.iphone() || this.ipod() || this.windowsPhone() || this.blackberryPhone() || this.fxosPhone() || this.meego(); };
+        this.tablet             = function () { return this.ipad() || this.androidTablet() || this.blackberryTablet() || this.windowsTablet() || this.fxosTablet(); };
+        this.desktop            = function () { return !this.tablet() && !this.mobile(); };
 
 
-        this.client_width = docEl.clientWidth;
-        this.client_width = docEl.clientHeight;
+        if (this.options.scale){
+            var docEl = document.documentElement;
+            //this.devicePixelRatio = ('devicePixelRatio' in window) ? window.devicePixelRatio : 'unsupported';
+            this.screen_width  = screen.width;
+            this.screen_height = screen.height;
 
-        this.screen_width_em  = this.screen_width/16;
-        this.screen_height_em = this.screen_height/16;
+            this.client_width = docEl.clientWidth;
+            this.client_width = docEl.clientHeight;
 
-        this.dpi = 96;
-        for (var dpi=1; dpi<400; dpi++ )
-            if ( window.Modernizr.mq('(resolution: '+dpi+'dpi)') ){
-                this.dpi = dpi;
-                break;
-            }
+            this.screen_width_em  = this.screen_width/16;
+            this.screen_height_em = this.screen_height/16;
 
-        this.dpr = window.devicePixelRatio;
-        if (!this.dpr){
-            this.dpr = 1;
-            for (var dpr=1; dpr<4; dpr=dpr+0.1 )
-                if (
-                    Modernizr.mq('(-webkit-device-pixel-ratio: '+dpr+')') ||
-                    Modernizr.mq('(min--moz-device-pixel-ratio: '+dpr+')') ||
-                    Modernizr.mq('(-o-min-device-pixel-ratio: '+dpr+'/1)')
-                ){
-                    this.dpr = dpr;
+            this.dpi = 96;
+            for (var dpi=1; dpi<400; dpi++ )
+                if ( window.Modernizr.mq('(resolution: '+dpi+'dpi)') ){
+                    this.dpi = dpi;
                     break;
                 }
-        }
 
-        this.dpr = Math.round(100*this.dpr)/100;
+            this.dpr = window.devicePixelRatio;
+            if (!this.dpr){
+                this.dpr = 1;
+                for (var dpr=1; dpr<4; dpr=dpr+0.1 )
+                    if (
+                        Modernizr.mq('(-webkit-device-pixel-ratio: '+dpr+')') ||
+                        Modernizr.mq('(min--moz-device-pixel-ratio: '+dpr+')') ||
+                        Modernizr.mq('(-o-min-device-pixel-ratio: '+dpr+'/1)')
+                    ){
+                        this.dpr = dpr;
+                        break;
+                    }
+            }
 
-        this.screen_diagonal = Math.sqrt( Math.pow(this.screen_width, 2) + Math.pow(this.screen_height,2) );
-        this.screen_diagonal_inc = this.screen_diagonal/this.dpi; //Best guest !
+            this.dpr = Math.round(100*this.dpr)/100;
 
-        //Calculate the diagonal and dpi for the reference screen
-        var ref_screen_diagonal = Math.sqrt( Math.pow(this.options.referenceScreen.width, 2) + Math.pow(this.options.referenceScreen.height, 2) );
-        this.ref_dpi = ref_screen_diagonal/this.options.referenceScreen.diagonal_inc;
+            this.screen_diagonal = Math.sqrt( Math.pow(this.screen_width, 2) + Math.pow(this.screen_height,2) );
+            this.screen_diagonal_inc = this.screen_diagonal/this.dpi; //Best guest !
 
-        //The scale is best guest for a scale (eq. html.style.font-size=this.scale) of the screen to have elements the same size as on the reference screen
-        this.scale = 100;
-        if ((this.dpr != 1) || (this.dpi != 96))
-            this.scale = Math.sqrt(this.dpi / this.ref_dpi)*100;
+            //Calculate the diagonal and dpi for the reference screen
+            var ref_screen_diagonal = Math.sqrt( Math.pow(this.options.referenceScreen.width, 2) + Math.pow(this.options.referenceScreen.height, 2) );
+            this.ref_dpi = ref_screen_diagonal/this.options.referenceScreen.diagonal_inc;
+
+            //The scale is best guest for a scale (eq. html.style.font-size=this.scale) of the screen to have elements the same size as on the reference screen
+            this.scale = 100;
+            if ((this.dpr != 1) || (this.dpi != 96))
+                this.scale = Math.sqrt(this.dpi / this.ref_dpi)*100;
+
+        } //if (this.options.scale){...
 
         //Get a string with browser and version
         this.browser_version = function() {
@@ -25336,60 +24888,44 @@ define(function () {
             return M.join(' ');
         }();
 
-
-
-        //Create own instance of MobileDetect
-        this.mobileDetect = new window.MobileDetect( this.wnua );
-
-        //Set properties using device.js and mobile-detect.js
+        //Set properties
         this.isDesktop   = this.desktop();
         this.isMobile    = this.mobile() || this.tablet();
-        this.mobileName  = this.mobileDetect.mobile();
         this.isPhone     = this.mobile();
-        this.phoneName   = this.mobileDetect.phone();
         this.isTablet    = this.tablet();
-        this.tabletName  = this.mobileDetect.tablet();
-        this.mobileGrade = this.mobileDetect.mobileGrade();
 
-        this.userAgent   = this.mobileDetect.userAgent();
         this.isWindows   = this.windows();
         this.isIos       = this.ios();
         this.isAndroid   = this.android();
 
-        this.os          = this.mobileDetect.os();
+        //Add tests to Modernizr
+        if (this.options.modernizr.device)
+            Modernizr.addTest({
+                desktop: this.isDesktop,
+                mobile : this.isMobile,
+                phone  : this.isPhone,
+                tablet : this.isTablet
+            });
 
-//        this.mobile      = this.mobileDetect.mobile();
-//        this.phone       = this.mobileDetect.phone();
-//        this.tablet      = this.mobileDetect.tablet();
+        if (this.options.modernizr.os)
+            Modernizr.addTest({
+                windows: this.isWindows,
+                ios    : this.isIos,
+                android: this.isAndroid
+            });
 
-        //Add device-tests to Modernizr
-        Modernizr.addTest({
-            desktop     : this.isDesktop,
-            mobile      : this.isMobile,
-            phone       : this.isPhone,
-            tablet      : this.isTablet,
-            mobilegradea: this.mobileGrade === 'A',
-            windows     : this.isWindows,
-            ios         : this.isIos,
-            android     : this.isAndroid
-        });
+        if (this.options.modernizr.ie){
+            //Adding test for Internet Explore versions 10
+            Modernizr.addTest('ie10', this.browser_version == 'MSIE 10' );
 
-        //Adding test for Internet Explore versions
-        for (var version=7; version<=10; version++ )
-            Modernizr.addTest('ie'+version, this.browser_version == 'MSIE '+version );        
+            //Adding test for Internet Explore versions 11
+            Modernizr.addTest('ie11', this.browser_version == 'IE 11');
+        }
     }
 
-  // expose access to the constructor
-  ns.ModernizrDevice = ModernizrDevice;
+    // expose access to the constructor
+    ns.ModernizrDevice = ModernizrDevice;
 
-    /******************************************
-    Initialize/ready
-    *******************************************/
-    $(function() {
-        ns.ModernizrDevice();
-
-    }); //End of initialize/ready
-    //******************************************
 
 }(window.Modernizr, jQuery, this, document));
 
@@ -25597,7 +25133,7 @@ define(function () {
 
             if (!ret.hasOwnProperty(key)) {
                 ret[key] = val;
-            } else 
+            } else
                 if (Array.isArray(ret[key])) {
                     ret[key].push(val);
                 } else {
@@ -25621,56 +25157,112 @@ define(function () {
 
         this.options = $.extend({
             //Default options
-            VERSION           : "1.2.10",
+            VERSION             : "1.3.1",
+            htmlFontSize        : 16,
+            createFIRSTup       : false, //When true the media query FIRST-up (allway display) and no-FIRST-up (allways hidden) are created. MUST MATCH $create-FIRST-up
+            createLASTdown      : false, //When true the media query LAST-down (allway display) and no-LAST-down (allways hidden) are created. MUST MATCH $create-LAST-down
             useWindowClientDim: true,
         }, options || {} );
 
+        var _this = this,
+            meta,
+            mediaJSON  = {},
+            minMaxJSON = {};
 
-        //'Reads the different media queries from the css-file using the 'dummy' class "modernizr-mediaquery-media-query"
-        var id,
-            meta      = $('<meta class="modernizr-mediaquery-media-query">').appendTo(document.head),
-            mediaJSON = parseStyleToObject(meta.css('font-family'));
-        meta.remove();        
-
-        this.mediaQueryList = [];
-        for (id in mediaJSON)
-            this.mediaQueryList.push({
-                id: id,
-                mq: mediaJSON[id],
-                on: false
+        if (this.options.breakpoints){
+            //Create mediaJSON and minMaxJSON from options.breakpoints
+            var breakpointList = [];
+            $.each( this.options.breakpoints, function( id, minPx ){
+                breakpointList.push( {id: id, minPx: minPx} );
             });
-    
-            
-        //'Reads the different min-max-intervalls from the css-file using the 'dummy' class "modernizr-mediaquery-min-max"
-        meta      = $('<meta class="modernizr-mediaquery-min-max">').appendTo(document.head);
-        mediaJSON = parseStyleToObject(meta.css('font-family'));
-        meta.remove();        
+            breakpointList.sort( function( bp1, bp2 ){return bp1 > bp2; });
 
+            $.each( breakpointList, function( index, bp ){
+                //Set max eq next min - 1
+                var id = bp.id,
+                    minPx = bp.minPx,
+                    maxPx = (index == breakpointList.length-1) ? 0 : breakpointList[index+1].minPx-1,
+                    min = minPx / _this.options.htmlFontSize,
+                    minEm = min+'em',
+                    max = maxPx / _this.options.htmlFontSize,
+                    maxEm = max+'em',
+                    mq     = '',
+                    mqUp   = '',
+                    mqDown = '';
+
+                if (min > 0) {
+                    mq   = mq   + ' and (min-width: '+ minEm+')';
+                    mqUp = mqUp + ' and (min-width: '+ minEm+')';
+                }
+                if (max > 0) {
+                    mq     = mq     + ' and (max-width: '+ maxEm+')';
+                    mqDown = mqDown + ' and (max-width: '+ maxEm+')';
+                }
+
+                //Add mediaquery and minMax for id
+                mediaJSON[id]  = 'screen' + mq;
+                minMaxJSON[id] = minPx + 'px_' + maxPx+'px';
+
+                //Add mediaquery for id-down
+                if ((index < breakpointList.length-1) || options.createLASTdown){
+                    mediaJSON[id+'-down']  = 'screen' + mqDown;
+                    minMaxJSON[id+'-down'] = '0_' + maxPx+'px';
+                }
+
+                //Add mediaquery for id-up
+                if (index || options.createFIRSTup){
+                    mediaJSON[id+'-up']  = 'screen' + mqUp;
+                    minMaxJSON[id+'-up'] = minPx + 'px_0';
+                }
+            });
+
+            //Add special values for portrait and landscape
+            mediaJSON['landscape'] = 'screen and (orientation: landscape)';
+            minMaxJSON['landscape'] = '0_1_1';
+            mediaJSON['portrait'] = 'screen and (orientation: portrait)';
+            minMaxJSON['portrait'] = '0_1_0_1';
+        }
+        else {
+            //Reads the different media queries from the css-file using the 'dummy' class "modernizr-mediaquery-media-query"
+            meta      = $('<meta class="modernizr-mediaquery-media-query">').appendTo(document.head);
+            mediaJSON = parseStyleToObject(meta.css('font-family'));
+            meta.remove();
+
+            //Reads the different min-max-intervalls from the css-file using the 'dummy' class "modernizr-mediaquery-min-max"
+            meta      = $('<meta class="modernizr-mediaquery-min-max">').appendTo(document.head);
+            minMaxJSON = parseStyleToObject(meta.css('font-family'));
+            meta.remove();
+        }
+
+        //Convert mediaJSON
+        this.mediaQueryList = [];
+        $.each( mediaJSON, function( id, mq ){
+            _this.mediaQueryList.push({id: id, mq: mq, on: false });
+        });
+
+        //Convert minMaxJSON
         this.minMaxRatioList = [];
-        for (id in mediaJSON){
-            var minMaxRatio = mediaJSON[id].split('_');            
-            this.minMaxRatioList.push({
+        $.each( minMaxJSON, function( id, value ){
+            var minMaxRatio = value.split('_');
+            _this.minMaxRatioList.push({
                 id      : id,
                 min     : parseFloat(minMaxRatio[0]),
-                max     : parseFloat(minMaxRatio[1]) || 100000, 
+                max     : parseFloat(minMaxRatio[1]) || 100000,
                 minRatio: minMaxRatio.length > 2 ? parseFloat(minMaxRatio[2]) : 100000,
                 maxRatio: minMaxRatio.length > 3 ? parseFloat(minMaxRatio[3]) : 100000,
                 on      : false
             });
-        }
+        });
+
 
         //Set the 'change media-query event'
         $(window).on('resize.mmq', $.proxy( this._onMediaQuery, this ));
-        var THIS = this;
 
-        $(function() {
-            THIS._onMediaQuery();
-        });
-
+        this._onMediaQuery();
     }
 
-  // expose access to the constructor
-  ns.ModernizrMediaquery = ModernizrMediaquery;
+    // expose access to the constructor
+    ns.ModernizrMediaquery = ModernizrMediaquery;
 
     //Extend the prototype
     ns.ModernizrMediaquery.prototype = {
@@ -25682,13 +25274,13 @@ define(function () {
         one : function( mediaQueries, callback, context ){ this.globalEvents.one(  mediaQueries, callback, context ); },
 
 
-        setHtmlFontSizePx: function( fontSizePx ){ 
+        setHtmlFontSizePx: function( fontSizePx ){
             $('html').css('font-size', fontSizePx);
             $(window).trigger('resize.mmq');
             return fontSizePx;
         },
-        
-        setHtmlFontSizePercent: function( fontSizePercent ){ 
+
+        setHtmlFontSizePercent: function( fontSizePercent ){
             return this.setHtmlFontSizePx( fontSizePercent/100*this.defaultHtmlFontSize );
         },
 
@@ -25698,12 +25290,12 @@ define(function () {
             return !!this.modernizr.mq(mediaQuery.mq);
         },
         _isOn_minMaxRatioMode: function( minMaxRatio ){
-            return ( (this.window_width_em >= (minMaxRatio.min / this.defaultHtmlFontSize)) && 
+            return ( (this.window_width_em >= (minMaxRatio.min / this.defaultHtmlFontSize)) &&
                      (this.window_width_em <= (minMaxRatio.max / this.defaultHtmlFontSize)) ) ||
-                   ( (this.window_ratio >= minMaxRatio.minRatio) && 
+                   ( (this.window_ratio >= minMaxRatio.minRatio) &&
                      ( this.window_ratio <= minMaxRatio.maxRatio ) );
         },
-        
+
         _onMediaQuery: function( /*event*/ ){
             var i, list, listElem, isOn, isOnFunc;
             this.screen_width  = screen.width;
@@ -25718,7 +25310,7 @@ define(function () {
             this.window_ratio = this.window_width / this.window_height;
 
             if (this.options.useWindowClientDim){
-                list = this.minMaxRatioList; 
+                list = this.minMaxRatioList;
                 isOnFunc = $.proxy(this._isOn_minMaxRatioMode, this);
             }
             else {
@@ -25741,18 +25333,6 @@ define(function () {
 
 
     };
-
-
-    /******************************************
-    Initialize/ready
-    *******************************************/
-    $(function() { //"$( function() { ... });" is short for "$(document).ready( function(){...});"
-
-
-    }); //End of initialize/ready
-    //******************************************
-
-
 
 }(window.Modernizr, jQuery, this, document));
 

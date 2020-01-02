@@ -9,8 +9,8 @@
 	<meta name='copyright' content='FCOO'>
 	<meta name='owner' content='FCOO'>
 
-  <link  href="bower_components.css" rel="stylesheet">	
-  <link  href="../src/leaflet-multi-maps.css" rel="stylesheet">	
+  <link  href="bower_components.css" rel="stylesheet">
+  <link  href="../src/leaflet-multi-maps.css" rel="stylesheet">
   <style>
         .changeButton {
             position: absolute;
@@ -30,7 +30,7 @@
             text-align: center;
             font-size: 20px;
         }
-        
+
   </style>
 </head>
 
@@ -38,13 +38,11 @@
 <button class="changeButton">Click to change</button>
 
 <div id="my-multi-map-container" style="position: absolute; top:0; left:0; z-index:1">
-</div>    
+</div>
 
-<div id="my-mini-multi-map-container" style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box"></div>    
-<div id="my-mini-multi-map-container2" style="position: absolute; right:10px; bottom:10px; z-index:1; box-sizing: border-box"></div>    
+<div id="my-mini-multi-map-container" style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box"></div>
+<div id="my-mini-multi-map-container2" style="position: absolute; right:10px; bottom:10px; z-index:1; box-sizing: border-box"></div>
 
-
-	
 	<script src="bower_components.js"></script>
 	<script src="../src/leaflet-multi-maps.js"></script>
 	<script>
@@ -54,15 +52,15 @@
     $(function() {
         var testState = 0,
             myMultiMaps = L.multiMaps( '#my-multi-map-container' /*, options */ ),
-            myMiniMultiMaps = L.multiMaps( 
+            myMiniMultiMaps = L.multiMaps(
                 $('#my-mini-multi-map-container'), {
                     update: function( index, map, $container ){ $container.html( index );}
                 }),
-            myMiniMultiMaps2 = L.multiMaps( 
+            myMiniMultiMaps2 = L.multiMaps(
                 $('#my-mini-multi-map-container2'), {
-                    update: function( index, map, $container ){ 
+                    update: function( index, map, $container ){
                         $container
-                            .css( 'background-color', index % 2 == testState ? 'green' : 'white' ); 
+                            .css( 'background-color', index % 2 == testState ? 'green' : 'white' );
                     }
                 }),
             map;
@@ -71,7 +69,7 @@
             testState = 1 - testState;
             myMiniMultiMaps2.updateSubMaps();
         });
-    
+
         $('#my-mini-multi-map-container').screenRatio( 60 );
         $('#my-mini-multi-map-container2').windowRatio( 20, 30 );
 
@@ -79,7 +77,7 @@
         map.setView([56.2, 11.5], 6);
 		L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
 
-        
+
 		map = myMultiMaps.addMap();
         map.setView([56.2, 11.5], 6);
         L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
@@ -102,9 +100,9 @@
         L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
 
 
-    
+
         var testIndex = -1;
-        function onClick(){ 
+        function onClick(){
             testIndex++;
             if (testIndex >= myMultiMaps.setupList.length)
               testIndex = 0;
