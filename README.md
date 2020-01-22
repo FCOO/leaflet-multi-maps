@@ -68,7 +68,14 @@ The contents of the five columns/rows are:
     .addMap( options ): Add a new map with options and return the map-object
     .set( id ): Sets the display mode. Possible values for id is given above
 
+## Icon-font
+Icon-font for the different display modes are available.
 
+    <i class="famm-1-1-2"></i>
+    //OR
+    <i class="famm-1-1-2-p"></i>
+
+The `landscape` icon are automatic transformed to portrait mode when `portrait`-class is added to `<html>`
 
 ## Copyright and License
 This plugin is licensed under the [MIT license](https://github.com/FCOO/leaflet-multi-maps/LICENSE).

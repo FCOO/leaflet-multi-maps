@@ -208,3 +208,126 @@ $border: 1px solid black;
         .portrait &:not(:first-child) { border-left: $border; }
     }
 }
+
+/*******************************************************************
+********************************************************************
+ICON-FONT WITH MULTI-MAPS
+********************************************************************
+********************************************************************/
+@font-face {
+  font-family: 'leaflet-multi-maps';
+  src:  url('fonts/leaflet-multi-maps.eot?bka5lm');
+  src:  url('fonts/leaflet-multi-maps.eot?bka5lm#iefix') format('embedded-opentype'),
+    url('fonts/leaflet-multi-maps.ttf?bka5lm') format('truetype'),
+    url('fonts/leaflet-multi-maps.woff?bka5lm') format('woff'),
+    url('fonts/leaflet-multi-maps.svg?bka5lm#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^="famm-"], [class*=" famm-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'leaflet-multi-maps' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.famm-1:before {
+    content: "\e900";
+}
+.portrait .famm-1:before,
+.famm-1-p:before {
+    content: "\e908";
+}
+
+
+.famm-1-1:before {
+  content: "\e901";
+}
+.portrait .famm-1-1:before,
+.famm-1-1-p:before {
+  content: "\e909";
+}
+
+
+.famm-1-1-1:before {
+  content: "\e902";
+}
+.portrait .famm-1-1-1:before,
+.famm-1-1-1-p:before {
+  content: "\e90a";
+}
+
+
+.famm-1-2:before {
+  content: "\e90b";
+}
+.portrait .famm-1-2:before,
+.famm-1-2-p:before {
+  content: "\e90c";
+}
+.famm-2-1:before {
+  content: "\e903";
+}
+.portrait .famm-2-1:before,
+.famm-2-1-p:before {
+  content: "\e90d";
+}
+
+.famm-1-1-2:before {
+  content: "\e90e";
+}
+.portrait .famm-1-1-2:before,
+.famm-1-1-2-p:before {
+  content: "\e90f";
+}
+.famm-2-1-1:before {
+  content: "\e904";
+}
+.portrait .famm-2-1-1:before,
+.famm-2-1-1-p:before {
+  content: "\e910";
+}
+
+
+.famm-2-1-2:before {
+  content: "\e905";
+}
+.portrait .famm-2-1-2:before,
+.famm-2-1-2-p:before {
+  content: "\e911";
+}
+
+
+.famm-2-2:before {
+  content: "\e906";
+}
+.portrait .famm-2-2:before,
+.famm-2-2-p:before {
+  content: "\e912";
+}
+
+
+.famm-1-3:before {
+  content: "\e913";
+}
+.portrait .famm-1-3:before,
+.famm-1-3-p:before {
+  content: "\e914";
+}
+.famm-3-1:before {
+  content: "\e907";
+}
+.portrait .famm-3-1:before,
+.famm-3-1-p:before {
+  content: "\e915";
+}

@@ -64,7 +64,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //Default options
         options: {
-            VERSION: "1.1.2",
+            VERSION: "1.2.0",
             id     : multiMapsSetupList[0].id,
             border : true,
         },
