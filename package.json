@@ -1,6 +1,6 @@
 {
   "name": "leaflet-multi-maps",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "homepage": "https://github.com/FCOO/leaflet-multi-maps",
   "author": "Niels Holt nho@fcoo.dk",
   "description": "package.json is only use for building the package. see bower.json for more info",

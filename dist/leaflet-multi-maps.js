@@ -31,8 +31,8 @@ NAME  col#1  col#2  col#3  col#4  col#5
         //id       maps      className                                       mapClassNamePostfix = [] postfix of className of element where to append the map
         '1'    : { maps: 1,  className: 'multi-map-1',                       mapClassNamePostfix: ['2'                              ] },
         '1-1'  : { maps: 2,  className: 'multi-map-1-1',                     mapClassNamePostfix: ['2',   '3'                       ] },
-        '1-1-1': { maps: 3,  className: 'multi-map-1-1-1',                   mapClassNamePostfix: ['3',   '2',   '4'                ] },
         '2-1'  : { maps: 3,  className: 'multi-map-2-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
+        '1-1-1': { maps: 3,  className: 'multi-map-1-1-1',                   mapClassNamePostfix: ['3',   '2',   '4'                ] },
         '1-2'  : { maps: 3,  className: 'multi-map-2-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
         '3-1'  : { maps: 4,  className: 'multi-map-3-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
         '2-1-1': { maps: 4,  className: 'multi-map-2-1-1',                   mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
@@ -64,7 +64,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //Default options
         options: {
-            VERSION: "1.2.1",
+            VERSION: "1.2.2",
             id     : multiMapsSetupList[0].id,
             border : true,
         },
@@ -75,6 +75,10 @@ NAME  col#1  col#2  col#3  col#4  col#5
             L.setOptions(this, options);
 
             this.$container = container instanceof $ ? container : $(container);
+
+this.$container.addClass('TEST');
+
+
             this.mapList    = [];
             this.update     = options && options.update ? options.update : multiMaps_update;
 
