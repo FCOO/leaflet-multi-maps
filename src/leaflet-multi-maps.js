@@ -34,11 +34,11 @@ NAME  col#1  col#2  col#3  col#4  col#5
         '1-1-1': { maps: 3,  className: 'multi-map-1-1-1',                   mapClassNamePostfix: ['3',   '2',   '4'                ] },
         '2-1'  : { maps: 3,  className: 'multi-map-2-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
         '1-2'  : { maps: 3,  className: 'multi-map-2-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
-        '2-2'  : { maps: 4,  className: 'multi-map-2-2',                     mapClassNamePostfix: ['1-1', '1-2', '5-1', '5-2'       ] },
         '3-1'  : { maps: 4,  className: 'multi-map-3-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
-        '1-3'  : { maps: 4,  className: 'multi-map-3-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
         '2-1-1': { maps: 4,  className: 'multi-map-2-1-1',                   mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
+        '2-2'  : { maps: 4,  className: 'multi-map-2-2',                     mapClassNamePostfix: ['1-1', '1-2', '5-1', '5-2'       ] },
         '1-1-2': { maps: 4,  className: 'multi-map-2-1-1 multi-map-reverse', mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
+        '1-3'  : { maps: 4,  className: 'multi-map-3-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
         '2-1-2': { maps: 5,  className: 'multi-map-2-1-2',                   mapClassNamePostfix: ['2',   '1-1', '1-2', '5-1', '5-2'] }
     };
 
