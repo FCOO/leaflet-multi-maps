@@ -40,6 +40,11 @@ NAME  col#1  col#2  col#3  col#4  col#5
         '1-1-2': { maps: 4,  className: 'multi-map-2-1-1 multi-map-reverse', mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
         '1-3'  : { maps: 4,  className: 'multi-map-3-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
         '2-1-2': { maps: 5,  className: 'multi-map-2-1-2',                   mapClassNamePostfix: ['2',   '1-1', '1-2', '5-1', '5-2'] }
+/*
+TODO: New setup: 3-2 with 3 small and 2 medium
+Need to extend font-class
+*/
+
     };
 
     var multiMapsSetupList = [];
@@ -51,7 +56,9 @@ NAME  col#1  col#2  col#3  col#4  col#5
     //Default update-function
     function multiMaps_update( index, map, $container ){
         if (map){
-            $container.append( $(map.getContainer())  );
+            $(map.getContainer())
+                .detach()
+                .appendTo( $container );
             map._onResize();
         }
     }
@@ -64,7 +71,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //Default options
         options: {
-            VERSION: "1.2.3",
+            VERSION: "1.3.0",
             id     : multiMapsSetupList[0].id,
             border : true,
         },
@@ -126,13 +133,23 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
             $container.append( $col);
 
+            //this.$tempContainer = container for all maps not displayed
+            this.$tempContainer =
+                $('<div/>')
+                    .addClass('multi-map-container-hidden')
+                    .appendTo( $container );
+
+
         },
 
 
         addMap: function ( options ){
-            var map = L.map( $('<div/>')[0], options );
-            this.mapList.push( map );
+            var $div = $('<div/>').appendTo( this.$tempContainer ),
+                map = L.map( $div.get(0), options );
+            map.isVisibleInMultiMaps = false;
+            map.fire('hideInMultiMaps');
 
+            this.mapList.push( map );
             return map;
         },
 
@@ -166,26 +183,36 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //updateSubMaps
         updateSubMaps: function () {
-            var i,
-                map,
-                $map_container;
+            var _this = this;
 
-            //Remove the maps (if any) from its current container
-            for (i=0; i<this.mapList.length; i++ ){
-                map = this.mapList[i];
-                $map_container = $(map.getContainer());
+            //Move the maps from its current container to this.$tempContainer
+            $.each(this.mapList, function(index, map){
+                var $map_container = $(map.getContainer());
 
-                if ($map_container.parent().length )
-                    $map_container.detach();
-            }
+                if ($map_container.parent().get(0) !== _this.$tempContainer.get(0))
+                    $map_container
+                        .detach()
+                        .appendTo( _this.$tempContainer );
+            });
+
+            //Fire event "showInMultiMaps" or "hideInMultiMaps" for all maps (if any)
+            var visibleMaps = this.setup.mapClassNamePostfix.length;
+            $.each(this.mapList, function(index, map){
+                var isVisible = (index < visibleMaps);
+                if (map.isVisibleInMultiMaps != isVisible){
+                    map.isVisibleInMultiMaps = isVisible;
+                    map.fire(isVisible ? 'showInMultiMaps' : 'hideInMultiMaps');
+                }
+            });
 
             //Call this.update for all visible sub-maps
-            for (i=0; i<this.setup.mapClassNamePostfix.length; i++ )
-                this.update.call( this,
-                    /*index     :*/ i,
-                    /*map       :*/ this.mapList && (i < this.mapList.length) ? this.mapList[i] : null,
-                    /*$container:*/ this.$container.find('.multi-map-'+this.setup.mapClassNamePostfix[i] )
+            $.each(this.setup.mapClassNamePostfix, function(index, mapClassNamePostfix){
+                _this.update.call( _this,
+                    /*index     :*/ index,
+                    /*map       :*/ _this.mapList && _this.mapList[index] ? _this.mapList[index] : null,
+                    /*$container:*/ _this.$container.find('.multi-map-' + mapClassNamePostfix )
                 );
+            });
         }
 
     });

@@ -68,6 +68,11 @@ The contents of the five columns/rows are:
     .addMap( options ): Add a new map with options and return the map-object
     .set( id ): Sets the display mode. Possible values for id is given above
 
+
+### Events
+One of two events are fired on the maps when the map is hidden or displayed when `set(id)` is called:
+	`showInMultiMaps` and `hideInMultiMaps`
+
 ## Icon-font
 Icon-font for the different display modes are available.
 
