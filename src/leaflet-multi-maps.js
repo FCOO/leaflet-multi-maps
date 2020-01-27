@@ -56,6 +56,7 @@ Need to extend font-class
     //Default update-function
     function multiMaps_update( index, map, $container ){
         if (map){
+            map._multiMapsIndex = index;
             $(map.getContainer())
                 .detach()
                 .appendTo( $container );
@@ -74,10 +75,13 @@ Need to extend font-class
             VERSION: "{VERSION}",
             id     : multiMapsSetupList[0].id,
             border : true,
+            maxMaps: 5
         },
 
         //initialize
         initialize: function( container, options ) {
+
+//TODO: Update multiMapsSetups
 
             L.setOptions(this, options);
 
