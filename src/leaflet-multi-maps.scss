@@ -98,8 +98,6 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 
 
     .multi-map-container, .multi-map-sub-container {
-        text-align: center;
-
         box-sizing: border-box;
         flex: 0 0 auto;
     }

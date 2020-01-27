@@ -57,7 +57,7 @@
             myMultiMaps = L.multiMaps( '#my-multi-map-container' /*, options */ ),
             myMiniMultiMaps = L.multiMaps(
                 $('#my-mini-multi-map-container'), {
-                    update: function( index, map, $container ){ $container.html( index );}
+                    update: function( index, map, $container ){ $container.css('text-align', 'center').html( index );}
                 }),
             myMiniMultiMaps2 = L.multiMaps(
                 $('#my-mini-multi-map-container2'), {

@@ -71,7 +71,7 @@ Need to extend font-class
 
         //Default options
         options: {
-            VERSION: "1.3.0",
+            VERSION: "1.3.1",
             id     : multiMapsSetupList[0].id,
             border : true,
         },
