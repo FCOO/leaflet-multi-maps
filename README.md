@@ -19,7 +19,7 @@ The demo also shows how to create miniature versions of the selected multi-map s
 
 ## Usage
 
-    var myLeafletMultiMaps = L.multiMaps( "containerId" );
+    var myLeafletMultiMaps = L.multiMaps( "containerId", {maxMaps:5} );
     var map = myLeafletMultiMaps.addMap( optionsForMap );
     //Set options and layers for 1. map
 

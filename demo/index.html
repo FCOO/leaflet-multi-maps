@@ -54,7 +54,7 @@
 	<script>
     $(function() {
         var testState = 0,
-            myMultiMaps = L.multiMaps( '#my-multi-map-container' /*, options */ ),
+            myMultiMaps = L.multiMaps( '#my-multi-map-container', {border:false, maxMaps:5} ),
             myMiniMultiMaps = L.multiMaps(
                 $('#my-mini-multi-map-container'), {
                     update: function( index, map, $container ){ $container.css('text-align', 'center').html( index );}

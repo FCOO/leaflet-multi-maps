@@ -27,31 +27,26 @@ NAME  col#1  col#2  col#3  col#4  col#5
 1-1-2 = 2-1-1 + multi-map-reverse
 
 */
-    var multiMapsSetups = {
+    var defaultId = '1',
+        multiMapsSetups = {
         //id       maps      className                                       mapClassNamePostfix = [] postfix of className of element where to append the map
-        '1'    : { maps: 1,  className: 'multi-map-1',                       mapClassNamePostfix: ['2'                              ] },
-        '1-1'  : { maps: 2,  className: 'multi-map-1-1',                     mapClassNamePostfix: ['2',   '3'                       ] },
-        '2-1'  : { maps: 3,  className: 'multi-map-2-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
-        '1-1-1': { maps: 3,  className: 'multi-map-1-1-1',                   mapClassNamePostfix: ['3',   '2',   '4'                ] },
-        '1-2'  : { maps: 3,  className: 'multi-map-2-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
-        '3-1'  : { maps: 4,  className: 'multi-map-3-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
-        '2-1-1': { maps: 4,  className: 'multi-map-2-1-1',                   mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
-        '2-2'  : { maps: 4,  className: 'multi-map-2-2',                     mapClassNamePostfix: ['1-1', '1-2', '5-1', '5-2'       ] },
-        '1-1-2': { maps: 4,  className: 'multi-map-2-1-1 multi-map-reverse', mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
-        '1-3'  : { maps: 4,  className: 'multi-map-3-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
-        '2-1-2': { maps: 5,  className: 'multi-map-2-1-2',                   mapClassNamePostfix: ['2',   '1-1', '1-2', '5-1', '5-2'] }
+        defaultId: { maps: 1,  className: 'multi-map-1',                       mapClassNamePostfix: ['2'                              ] },
+        '1-1'    : { maps: 2,  className: 'multi-map-1-1',                     mapClassNamePostfix: ['2',   '3'                       ] },
+        '2-1'    : { maps: 3,  className: 'multi-map-2-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
+        '1-1-1'  : { maps: 3,  className: 'multi-map-1-1-1',                   mapClassNamePostfix: ['3',   '2',   '4'                ] },
+        '1-2'    : { maps: 3,  className: 'multi-map-2-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
+        '3-1'    : { maps: 4,  className: 'multi-map-3-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
+        '2-1-1'  : { maps: 4,  className: 'multi-map-2-1-1',                   mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
+        '2-2'    : { maps: 4,  className: 'multi-map-2-2',                     mapClassNamePostfix: ['1-1', '1-2', '5-1', '5-2'       ] },
+        '1-1-2'  : { maps: 4,  className: 'multi-map-2-1-1 multi-map-reverse', mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
+        '1-3'    : { maps: 4,  className: 'multi-map-3-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
+        '2-1-2'  : { maps: 5,  className: 'multi-map-2-1-2',                   mapClassNamePostfix: ['2',   '1-1', '1-2', '5-1', '5-2'] }
 /*
 TODO: New setup: 3-2 with 3 small and 2 medium
 Need to extend font-class
 */
 
     };
-
-    var multiMapsSetupList = [];
-    $.each( multiMapsSetups, function( id, setup ){
-        multiMapsSetupList.push( $.extend( {id: id}, setup ) );
-    });
-
 
     //Default update-function
     function multiMaps_update( index, map, $container ){
@@ -66,24 +61,32 @@ Need to extend font-class
 
     //Extend base leaflet class
     L.MultiMaps = L.Class.extend({
-        setups   : multiMapsSetups,
-        setupList: multiMapsSetupList,
-        setup    : null,
+        setup: null,
 
         //Default options
         options: {
             VERSION: "{VERSION}",
-            id     : multiMapsSetupList[0].id,
+            id     : defaultId,
             border : true,
             maxMaps: 5
         },
 
         //initialize
         initialize: function( container, options ) {
-
-//TODO: Update multiMapsSetups
-
             L.setOptions(this, options);
+
+            this.options.maxMaps = Math.min(5, this.options.maxMaps || 5);
+            var _this = this;
+
+            this.setups = {};//$.extend({}, multiMapsSetups);
+            this.setupList = [];
+            $.each( multiMapsSetups, function( id, setup ){
+                setup = $.extend( {id: id}, setup );
+                if (setup.maps <= _this.options.maxMaps){
+                    _this.setups[id] = setup;
+                    _this.setupList.push(setup);
+                }
+            });
 
             this.$container = container instanceof $ ? container : $(container);
 
