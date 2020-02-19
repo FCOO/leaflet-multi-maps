@@ -10,7 +10,13 @@
 (function ($, L/*, window, document, undefined*/) {
     "use strict";
 /*
-There are 11 differents setups
+In landscape mode it is by columns. In portrait mode it is by rows.
+The order of the columns is changed when class 'multi-map-reverse' is added
+1. col     : 2-4 small maps
+2. - 4. col: 1 map
+5. col     : 2 small maps
+
+There are 17 differents setups
 NAME  col#1  col#2  col#3  col#4  col#5
 ----- ------ ------ ------ ------ ------
 1            show
@@ -18,34 +24,44 @@ NAME  col#1  col#2  col#3  col#4  col#5
 1-1-1        show   show   show
 2-1   show 2 show
 3-1   show 3 show
-2-2   show 2                      show
+2-2   show 2                      show 2
 2-1-1 show 2 show   show
-2-1-2 show 2 show                 show
+2-1-2 show 2 show                 show 2
+3-1-1 show 3 show   show
+3-2   show 3                      show 2
+4-1   show 4 show
 
 1-2   = 2-1 + multi-map-reverse
 1-3   = 3-1 + multi-map-reverse
 1-1-2 = 2-1-1 + multi-map-reverse
-
+1-1-3 = 3-1-1 + multi-map-reverse
+2-3   = 3-2 + multi-map-reverse
+1-4   = 4-1 + multi-map-reverse
 */
     var defaultId = '1',
         multiMapsSetups = {
         //id       maps      className                                       mapClassNamePostfix = [] postfix of className of element where to append the map
         '1'    : { maps: 1,  className: 'multi-map-1',                       mapClassNamePostfix: ['2'                              ] },
+
         '1-1'  : { maps: 2,  className: 'multi-map-1-1',                     mapClassNamePostfix: ['2',   '3'                       ] },
+
         '2-1'  : { maps: 3,  className: 'multi-map-2-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
         '1-1-1': { maps: 3,  className: 'multi-map-1-1-1',                   mapClassNamePostfix: ['3',   '2',   '4'                ] },
         '1-2'  : { maps: 3,  className: 'multi-map-2-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2'              ] },
+
         '3-1'  : { maps: 4,  className: 'multi-map-3-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
         '2-1-1': { maps: 4,  className: 'multi-map-2-1-1',                   mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
         '2-2'  : { maps: 4,  className: 'multi-map-2-2',                     mapClassNamePostfix: ['1-1', '1-2', '5-1', '5-2'       ] },
         '1-1-2': { maps: 4,  className: 'multi-map-2-1-1 multi-map-reverse', mapClassNamePostfix: ['2',   '3',   '1-1', '1-2'       ] },
         '1-3'  : { maps: 4,  className: 'multi-map-3-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3'       ] },
-        '2-1-2': { maps: 5,  className: 'multi-map-2-1-2',                   mapClassNamePostfix: ['2',   '1-1', '1-2', '5-1', '5-2'] }
-/*
-TODO: New setup: 3-2 with 3 small and 2 medium
-Need to extend font-class
-*/
 
+        '4-1'  : { maps: 5,  className: 'multi-map-4-1',                     mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3', '1-4'] },
+        '3-1-1': { maps: 5,  className: 'multi-map-3-1-1',                   mapClassNamePostfix: ['2',   '3',   '1-1', '1-2', '1-3'] },
+        '3-2'  : { maps: 5,  className: 'multi-map-3-2',                     mapClassNamePostfix: ['5-1', '5-2', '1-1', '1-2', '1-3'] },
+        '2-1-2': { maps: 5,  className: 'multi-map-2-1-2',                   mapClassNamePostfix: ['2',   '1-1', '1-2', '5-1', '5-2'] },
+        '2-3'  : { maps: 5,  className: 'multi-map-3-2 multi-map-reverse',   mapClassNamePostfix: ['5-1', '5-2', '1-1', '1-2', '1-3'] },
+        '1-1-3': { maps: 5,  className: 'multi-map-3-1-1 multi-map-reverse', mapClassNamePostfix: ['2',   '3',   '1-1', '1-2', '1-3'] },
+        '1-4'  : { maps: 5,  className: 'multi-map-4-1 multi-map-reverse',   mapClassNamePostfix: ['2',   '1-1', '1-2', '1-3', '1-4'] },
     };
 
     //Default update-function
@@ -65,7 +81,7 @@ Need to extend font-class
 
         //Default options
         options: {
-            VERSION: "1.4.1",
+            VERSION: "1.5.0",
             id     : defaultId,
             border : true,
             maxMaps: 5
@@ -78,7 +94,7 @@ Need to extend font-class
             this.options.maxMaps = Math.min(5, this.options.maxMaps || 5);
             var _this = this;
 
-            this.setups = {};//$.extend({}, multiMapsSetups);
+            this.setups = {};
             this.setupList = [];
             $.each( multiMapsSetups, function( id, setup ){
                 setup = $.extend( {id: id}, setup );
@@ -125,7 +141,8 @@ Need to extend font-class
             $col
                 .append( $('<div class="multi-map-container multi-map-1-1"></div>') )
                 .append( $('<div class="multi-map-container multi-map-1-2"></div>') )
-                .append( $('<div class="multi-map-container multi-map-1-3"></div>') );
+                .append( $('<div class="multi-map-container multi-map-1-3"></div>') )
+                .append( $('<div class="multi-map-container multi-map-1-4"></div>') );
 
             $container
                 .append( $col)

@@ -14,11 +14,11 @@
 css for different setups of maps.
 In landscape mode it is by columns. In portrait mode it is by rows.
 The order of the columns is changed when class 'multi-map-reverse' is added
-1. col     : 2 or 3 small maps
+1. col     : 2-4 small maps
 2. - 4. col: 1 map
 5. col     : 2 small maps
 
-There are 11 different setups
+There are 17 different setups
 NAME  col#1  col#2  col#3  col#4  col#5
 ----- ------ ------ ------ ------ ------
 1            show
@@ -29,10 +29,17 @@ NAME  col#1  col#2  col#3  col#4  col#5
 2-2   show 2                      show
 2-1-1 show 2 show   show
 2-1-2 show 2 show                 show
+3-1-1 show 3 show   show
+3-2   show 3                      show 2
+4-1   show 4 show
+
 
 1-2   = 2-1 + multi-map-reverse
 1-3   = 3-1 + multi-map-reverse
 1-1-2 = 2-1-1 + multi-map-reverse
+1-1-3 = 3-1-1 + multi-map-reverse
+2-3   = 3-2 + multi-map-reverse
+1-4   = 4-1 + multi-map-reverse
 
 The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <html class="multi-map-3-1">
 */
@@ -80,15 +87,22 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
   width: 50%;
   height: 100%; }
 
-.landscape.multi-map-3-1 .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+.landscape[class*="multi-map-3"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
   height: 33.3333333333%; }
 
-.portrait.multi-map-3-1 .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+.portrait[class*="multi-map-3"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
   width: 33.3333333333%; }
 
-.multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:last-child {
+.landscape[class*="multi-map-4"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
+  height: 25%; }
+
+.portrait[class*="multi-map-4"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
+  width: 25%; }
+
+.multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3) {
   display: none; }
-  .multi-map-3-1 .multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:last-child {
+  [class*="multi-map-3-"] .multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3):nth-child(3),
+  [class*="multi-map-4-"] .multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3) {
     display: block; }
 
 .multi-map-outer-container .multi-map-container, .multi-map-outer-container .multi-map-sub-container {
@@ -215,10 +229,54 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   height: 25%; }
 
+.multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 14.2857142857%; }
+
+.multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 14.2857142857%; }
+
+.multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 42.8571428571%; }
+
+.multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 42.8571428571%; }
+
+.multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  width: 42.8571428571%; }
+
+.multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+  height: 42.8571428571%; }
+
+.multi-map-4-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-4-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 20%; }
+
+.multi-map-4-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-4-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 20%; }
+
+.multi-map-4-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-4-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  width: 80%; }
+
+.multi-map-4-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-4-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+  height: 80%; }
+
+.multi-map-3-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  width: 33.3333333333%; }
+
+.multi-map-3-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+  height: 33.3333333333%; }
+
+.multi-map-3-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-3-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  width: 66.6666666667%; }
+
+.multi-map-3-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-3-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+  height: 66.6666666667%; }
+
 [class*=' multi-map-1'] .multi-map-outer-container > .multi-map-container.multi-map-1, [class*=' multi-map-1'] .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   display: none; }
 
-.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-2,
+.multi-map-3-2 .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-2,
+.multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   display: none; }
 
 .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
@@ -236,7 +294,11 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   display: none; }
 
-.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5, .multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-5,
+.multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-5,
+.multi-map-3-2 .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5,
+.multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5,
+.multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   display: flex; }
 
 .multi-map-outer-container .leaflet-container {
@@ -268,12 +330,12 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 /*******************************************************************
 ********************************************************************
 ICON-FONT WITH MULTI-MAPS
+Copyed from _iconmoon/style.css
 ********************************************************************
 ********************************************************************/
 @font-face {
   font-family: 'leaflet-multi-maps';
-  src: url("fonts/leaflet-multi-maps.eot?bka5lm");
-  src: url("fonts/leaflet-multi-maps.eot?bka5lm#iefix") format("embedded-opentype"), url("fonts/leaflet-multi-maps.ttf?bka5lm") format("truetype"), url("fonts/leaflet-multi-maps.woff?bka5lm") format("woff"), url("fonts/leaflet-multi-maps.svg?bka5lm#icomoon") format("svg");
+  src: url("fonts/leaflet-multi-maps.ttf?3279cz") format("truetype"), url("fonts/leaflet-multi-maps.woff?3279cz") format("woff"), url("fonts/leaflet-multi-maps.svg?3279cz#leaflet-multi-maps") format("svg");
   font-weight: normal;
   font-style: normal;
   font-display: block; }
@@ -291,79 +353,104 @@ ICON-FONT WITH MULTI-MAPS
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale; }
 
+.famm-4-1-p:before {
+  content: "\e91a"; }
+
+.famm-1-4-p:before {
+  content: "\e91b"; }
+
+.famm-1-4:before {
+  content: "\e91c"; }
+
+.famm-4-1:before {
+  content: "\e91d"; }
+
+.famm-3-2-p:before {
+  content: "\e922"; }
+
+.famm-2-3-p:before {
+  content: "\e91e"; }
+
+.famm-2-3:before {
+  content: "\e91f"; }
+
+.famm-3-2:before {
+  content: "\e920"; }
+
+.famm-3-1-1:before {
+  content: "\e916"; }
+
+.famm-3-1-1-p:before {
+  content: "\e918"; }
+
+.famm-1-1-3-p:before {
+  content: "\e917"; }
+
+.famm-1-1-3:before {
+  content: "\e919"; }
+
 .famm-1:before {
   content: "\e900"; }
 
-.portrait .famm-1:before,
 .famm-1-p:before {
   content: "\e908"; }
 
 .famm-1-1:before {
   content: "\e901"; }
 
-.portrait .famm-1-1:before,
 .famm-1-1-p:before {
   content: "\e909"; }
 
 .famm-1-1-1:before {
   content: "\e902"; }
 
-.portrait .famm-1-1-1:before,
 .famm-1-1-1-p:before {
   content: "\e90a"; }
-
-.famm-1-2:before {
-  content: "\e90b"; }
-
-.portrait .famm-1-2:before,
-.famm-1-2-p:before {
-  content: "\e90c"; }
 
 .famm-2-1:before {
   content: "\e903"; }
 
-.portrait .famm-2-1:before,
+.famm-1-2:before {
+  content: "\e90b"; }
+
+.famm-1-2-p:before {
+  content: "\e90c"; }
+
 .famm-2-1-p:before {
   content: "\e90d"; }
-
-.famm-1-1-2:before {
-  content: "\e90e"; }
-
-.portrait .famm-1-1-2:before,
-.famm-1-1-2-p:before {
-  content: "\e90f"; }
 
 .famm-2-1-1:before {
   content: "\e904"; }
 
-.portrait .famm-2-1-1:before,
+.famm-1-1-2:before {
+  content: "\e90e"; }
+
+.famm-1-1-2-p:before {
+  content: "\e90f"; }
+
 .famm-2-1-1-p:before {
   content: "\e910"; }
 
 .famm-2-1-2:before {
   content: "\e905"; }
 
-.portrait .famm-2-1-2:before,
 .famm-2-1-2-p:before {
   content: "\e911"; }
 
 .famm-2-2:before {
   content: "\e906"; }
 
-.portrait .famm-2-2:before,
 .famm-2-2-p:before {
   content: "\e912"; }
-
-.famm-1-3:before {
-  content: "\e913"; }
-
-.portrait .famm-1-3:before,
-.famm-1-3-p:before {
-  content: "\e914"; }
 
 .famm-3-1:before {
   content: "\e907"; }
 
-.portrait .famm-3-1:before,
+.famm-1-3:before {
+  content: "\e913"; }
+
+.famm-1-3-p:before {
+  content: "\e914"; }
+
 .famm-3-1-p:before {
   content: "\e915"; }

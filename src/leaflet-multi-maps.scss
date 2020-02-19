@@ -21,11 +21,11 @@
 css for different setups of maps.
 In landscape mode it is by columns. In portrait mode it is by rows.
 The order of the columns is changed when class 'multi-map-reverse' is added
-1. col     : 2 or 3 small maps
+1. col     : 2-4 small maps
 2. - 4. col: 1 map
 5. col     : 2 small maps
 
-There are 11 different setups
+There are 17 different setups
 NAME  col#1  col#2  col#3  col#4  col#5
 ----- ------ ------ ------ ------ ------
 1            show
@@ -36,10 +36,17 @@ NAME  col#1  col#2  col#3  col#4  col#5
 2-2   show 2                      show
 2-1-1 show 2 show   show
 2-1-2 show 2 show                 show
+3-1-1 show 3 show   show
+3-2   show 3                      show 2
+4-1   show 4 show
+
 
 1-2   = 2-1 + multi-map-reverse
 1-3   = 3-1 + multi-map-reverse
 1-1-2 = 2-1-1 + multi-map-reverse
+1-1-3 = 3-1-1 + multi-map-reverse
+2-3   = 3-2 + multi-map-reverse
+1-4   = 4-1 + multi-map-reverse
 
 The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <html class="multi-map-3-1">
 */
@@ -86,13 +93,20 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
                 height: ( 100% / 1);
             }
 
-            .landscape.multi-map-3-1 & { height: ( 100% / 3); }
-            .portrait.multi-map-3-1 &  { width : ( 100% / 3); }
+            //Dim of small maps in first column
+            .landscape[class*="multi-map-3"] &[class*="multi-map-1"] { height: ( 100% / 3); }
+            .portrait[class*="multi-map-3"]  &[class*="multi-map-1"] { width : ( 100% / 3); }
+
+            .landscape[class*="multi-map-4"] &[class*="multi-map-1"] { height: ( 100% / 4); }
+            .portrait[class*="multi-map-4"]  &[class*="multi-map-1"] { width : ( 100% / 4); }
         }
-        //Last mini-map in first coloum is only visible on multi-map-3-1
-        &:first-child .multi-map-container:last-child {
+        //For N >= 3: Nth mini-map in first coloum is only visible on multi-map-N+
+        &:first-child .multi-map-container:nth-child(n + 3) {
             display: none;
-            .multi-map-3-1 & { display: block; }
+            [class*="multi-map-3-"] &:nth-child(3),
+            [class*="multi-map-4-"] &               {
+                display: block;
+            }
         }
     }
 
@@ -151,13 +165,28 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
         @include dimention(multi-map-2-1-2, multi-map-5, 1, 4);
 
 
+        //multi-map-3-1-1
+        @include dimention(multi-map-3-1-1, multi-map-1, 1, 7);
+        @include dimention(multi-map-3-1-1, multi-map-2, 3, 7);
+        @include dimention(multi-map-3-1-1, multi-map-3, 3, 7);
+
+        //multi-map-4-1
+        @include dimention(multi-map-4-1, multi-map-1, 1, 5);
+        @include dimention(multi-map-4-1, multi-map-2, 4, 5);
+
+
+        //multi-map-3-2
+        @include dimention(multi-map-3-2, multi-map-1, 1, 3);
+        @include dimention(multi-map-3-2, multi-map-5, 2, 3);
+
 
         //Display
         //1. col: hidden for any 1-x-y
         [class*=' multi-map-1'] &.multi-map-1 { display: none }
 
-        //2. col: Only hidden for multi-map-2-2
-        .multi-map-2-2 &.multi-map-2 { display: none }
+        //2. col: Only hidden for multi-map-2-2 and multi-map-3-2
+        .multi-map-2-2 &.multi-map-2,
+        .multi-map-3-2 &.multi-map-2 { display: none }
 
         //3. col: Hidden except for 1-1, 1-1-1, 2-1-1
         &.multi-map-3 {display: none; }
@@ -167,9 +196,11 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
         &.multi-map-4 {display: none; }
         .multi-map-1-1-1 &.multi-map-4 { display: block }
 
-        //5. col: Hidden except for 2-2, 2-1-2
+        //5. col: Hidden except for 2-2, 2-1-2, 3-2
         &.multi-map-5 {display: none; }
-        .multi-map-2-2 &.multi-map-5, .multi-map-2-1-2 &.multi-map-5 { display: flex }
+        .multi-map-2-2   &.multi-map-5,
+        .multi-map-2-1-2 &.multi-map-5,
+        .multi-map-3-2 &.multi-map-5 { display: flex }
     }
 
 

@@ -31,33 +31,32 @@ The demo also shows how to create miniature versions of the selected multi-map s
 
 
 ### Display-modes
-There are 11 different modes displaying 1-5 maps
+There are 17 different modes displaying 1-5 maps
 
 If the browser is in landscape mode it is by columns. If it is in portrait mode it is by rows.
 
 There are five columns/rows containing the five maps.
 Witch columns/rows and amps that are visible is set by `.set( id )` where the possible values of `id` is given below.
 
-The contents of the five columns/rows are:
-
-    1. col/row     : 2 or 3 small maps
-    2. - 4. col/row: 1 map
-    5. col/row     : 2 small maps
-
-
 | Id | Maps | Description |
 | :--: | :--: | :-- |
 | `"1"` | 1 | 1 map (default) |
 | `"1-1"` | 2 | 2 maps |
-| `"1-1-1"` | 3 | 3 maps |
 | `"2-1"` | 3 | 2 small and 1 big map |
-| `"3-1"` | 4 | 3 small and 1 big map |
-| `"2-2"` | 4 | 4 equal sized maps |
-| `"2-1-1"` | 4 | 2 small and 2 big maps|
-| `"2-1-2"` | 5 | 2 small, 1 big, and 2 small maps |
+| `"1-1-1"` | 3 | 3 maps |
 | `"1-2"` | 3 | 1 big and 2 small maps |
-| `"1-3"` | 4 | 1 big and 3 small maps |
+| `"3-1"` | 4 | 3 small and 1 big map |
+| `"2-1-1"` | 4 | 2 small and 2 big maps|
+| `"2-2"` | 4 | 4 equal sized maps |
 | `"1-1-2"` | 4 | 2 big and 2 small maps |
+| `"1-3"` | 4 | 1 big and 3 small maps |
+| `"4-1` | 5 | 4 small and 1 big map |
+| `"3-1-1` | 5 | 3 small and 2 big maps |
+| `"3-2` | 5 | 3 small and 2 semi-big maps |
+| `"2-1-2"` | 5 | 2 small, 1 big, and 2 small maps |
+| `"2-3` | 5 | 2 semi-big and 3 small maps |
+| `"1-1-3` | 5 | 2 big and 3 small maps |
+| `"1-4` | 5 | 1 bg and 4 small maps |
 
 
 

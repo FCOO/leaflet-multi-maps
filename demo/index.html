@@ -54,7 +54,12 @@
 	<script>
     $(function() {
         var testState = 0,
-            myMultiMaps = L.multiMaps( '#my-multi-map-container', {border:false, maxMaps:5} ),
+            myMultiMaps = L.multiMaps( '#my-multi-map-container', {
+                border : false,
+                maxMaps: 5,
+//Only test update: function( index, map, $container ){ $container.css({'text-align': 'center', 'border':'1px solid black'}).html( index );}
+
+            } ),
             myMiniMultiMaps = L.multiMaps(
                 $('#my-mini-multi-map-container'), {
                     update: function( index, map, $container ){ $container.css('text-align', 'center').html( index );}
@@ -100,7 +105,7 @@
 
 		map = myMultiMaps.addMap();
         map.setView([56.2, 11.5], 6);
-        L.tileLayer('http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
+		L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20 }).addTo(map);
 
 
 
