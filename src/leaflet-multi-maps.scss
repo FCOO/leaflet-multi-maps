@@ -243,6 +243,7 @@ ICON-FONT WITH MULTI-MAPS
 Copyed from _iconmoon/style.css
 ********************************************************************
 ********************************************************************/
+/*
 @font-face {
   font-family: 'leaflet-multi-maps';
   src:
@@ -255,7 +256,6 @@ Copyed from _iconmoon/style.css
 }
 
 [class^="famm-"], [class*=" famm-"] {
-  /* use !important to prevent issues with browser extensions that change fonts */
   font-family: 'leaflet-multi-maps' !important;
   speak: none;
   font-style: normal;
@@ -264,110 +264,38 @@ Copyed from _iconmoon/style.css
   text-transform: none;
   line-height: 1;
 
-  /* Better Font Rendering =========== */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+*/
 
-.famm-4-1-p:before {
-  content: "\e91a";
-}
-.famm-1-4-p:before {
-  content: "\e91b";
-}
-.famm-1-4:before {
-  content: "\e91c";
-}
-.famm-4-1:before {
-  content: "\e91d";
-}
-.famm-3-2-p:before {
-  content: "\e922";
-}
-.famm-2-3-p:before {
-  content: "\e91e";
-}
-.famm-2-3:before {
-  content: "\e91f";
-}
-.famm-3-2:before {
-  content: "\e920";
-}
-.famm-3-1-1:before {
-  content: "\e916";
-}
-.famm-3-1-1-p:before {
-  content: "\e918";
-}
-.famm-1-1-3-p:before {
-  content: "\e917";
-}
-.famm-1-1-3:before {
-  content: "\e919";
-}
-.famm-1:before {
-  content: "\e900";
-}
-.famm-1-p:before {
-  content: "\e908";
-}
-.famm-1-1:before {
-  content: "\e901";
-}
-.famm-1-1-p:before {
-  content: "\e909";
-}
-.famm-1-1-1:before {
-  content: "\e902";
-}
-.famm-1-1-1-p:before {
-  content: "\e90a";
-}
-.famm-2-1:before {
-  content: "\e903";
-}
-.famm-1-2:before {
-  content: "\e90b";
-}
-.famm-1-2-p:before {
-  content: "\e90c";
-}
-.famm-2-1-p:before {
-  content: "\e90d";
-}
-.famm-2-1-1:before {
-  content: "\e904";
-}
-.famm-1-1-2:before {
-  content: "\e90e";
-}
-.famm-1-1-2-p:before {
-  content: "\e90f";
-}
-.famm-2-1-1-p:before {
-  content: "\e910";
-}
-.famm-2-1-2:before {
-  content: "\e905";
-}
-.famm-2-1-2-p:before {
-  content: "\e911";
-}
-.famm-2-2:before {
-  content: "\e906";
-}
-.famm-2-2-p:before {
-  content: "\e912";
-}
-.famm-3-1:before {
-  content: "\e907";
-}
-.famm-1-3:before {
-  content: "\e913";
-}
-.famm-1-3-p:before {
-  content: "\e914";
-}
-.famm-3-1-p:before {
-  content: "\e915";
+//Import all variables and style directlly from _icomoon
+@import "_icomoon/variables";
+@import "_icomoon/style.scss";
+
+//$multiMapsSetups must corresponds multiMapsSetups in src/leaflet-multi-maps
+//Add XX => xx-p when in portrait mode
+$multiMapsSetups:
+        '1',
+        '1-1',
+        '1-1',
+        '2-1',
+        '1-1-1',
+        '1-2',
+        '3-1',
+        '2-1-1',
+        '2-2',
+        '1-1-2',
+        '1-3',
+        '4-1',
+        '3-1-1',
+        '3-2',
+        '2-1-2',
+        '2-3',
+        '1-1-3',
+        '1-4';
+
+
+@each $id in $multiMapsSetups {
+    .portrait .famm-#{$id}{ @extend .famm-#{$id}-p; }
 }
