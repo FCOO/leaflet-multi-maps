@@ -81,9 +81,10 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //Default options
         options: {
-            VERSION: "1.5.2",
+            VERSION: "2.0.0",
             id     : defaultId,
             border : true,
+            local  : false,
             maxMaps: 5
         },
 
@@ -94,6 +95,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
             this.options.maxMaps = Math.min(5, this.options.maxMaps || 5);
             var _this = this;
 
+            this.prefix = this.options.local ? 'local-' :'global-';
             this.setups = {};
             this.setupList = [];
             $.each( multiMapsSetups, function( id, setup ){
@@ -105,6 +107,10 @@ NAME  col#1  col#2  col#3  col#4  col#5
             });
 
             this.$container = container instanceof $ ? container : $(container);
+            if (this.options.local){
+                this.$container.addClass('multi-map-body');
+                this.$container = $('<div/>').appendTo(this.$container);
+            }
 
             this.mapList    = [];
             this.update     = options && options.update ? options.update : multiMaps_update;
@@ -133,27 +139,26 @@ NAME  col#1  col#2  col#3  col#4  col#5
             */
             var $container = container instanceof $ ? container : $(container);
 
-            $container.addClass('multi-map-outer-container');
+            $container.addClass('multi-map-outer-container ' + this.prefix+'multi-map-outer-container');
             if (!this.options.border)
                 $container.addClass('no-border');
-
-            var $col = $('<div class="multi-map-sub-container multi-map-1"></div>');
+            var $col = $('<div class="multi-map-sub-container '+this.prefix+'multi-map-1"></div>');
             $col
-                .append( $('<div class="multi-map-container multi-map-1-1"></div>') )
-                .append( $('<div class="multi-map-container multi-map-1-2"></div>') )
-                .append( $('<div class="multi-map-container multi-map-1-3"></div>') )
-                .append( $('<div class="multi-map-container multi-map-1-4"></div>') );
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-1-1"></div>') )
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-1-2"></div>') )
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-1-3"></div>') )
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-1-4"></div>') );
 
             $container
                 .append( $col)
-                .append( $('<div class="multi-map-container multi-map-2"></div>') )
-                .append( $('<div class="multi-map-container multi-map-3"></div>') )
-                .append( $('<div class="multi-map-container multi-map-4"></div>') );
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-2"></div>') )
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-3"></div>') )
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-4"></div>') );
 
-            $col = $('<div class="multi-map-sub-container multi-map-5"></div>');
+            $col = $('<div class="multi-map-sub-container '+this.prefix+'multi-map-5"></div>');
             $col
-                .append( $('<div class="multi-map-container multi-map-5-1"></div>') )
-                .append( $('<div class="multi-map-container multi-map-5-2"></div>') );
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-5-1"></div>') )
+                .append( $('<div class="multi-map-container '+this.prefix+'multi-map-5-2"></div>') );
 
             $container.append( $col);
 
@@ -191,18 +196,18 @@ NAME  col#1  col#2  col#3  col#4  col#5
             if (!this.setups[id])
                 return;
 
-            var $html = $('html');
+            var $setupContainer  = this.options.local ? this.$container.parent() : $('body');
+
             //Reset from previous setup
             if (this.setup)
-                $html.removeClass( this.setup.className );
+                $setupContainer.removeClass( this.prefix + this.setup.className );
 
             this.options.id = id;
             this.setup = this.setups[id];
 
-            $html.addClass( this.setup.className );
+            $setupContainer.addClass( this.prefix + this.setup.className );
 
             this.updateSubMaps();
-
         },
 
         //updateSubMaps
@@ -234,7 +239,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
                 _this.update.call( _this,
                     /*index     :*/ index,
                     /*map       :*/ _this.mapList && _this.mapList[index] ? _this.mapList[index] : null,
-                    /*$container:*/ _this.$container.find('.multi-map-' + mapClassNamePostfix )
+                    /*$container:*/ _this.$container.find('.'+ _this.prefix + 'multi-map-' + mapClassNamePostfix )
                 );
             });
         }
@@ -246,6 +251,3 @@ NAME  col#1  col#2  col#3  col#4  col#5
     };
 
 }(jQuery, L, this, document));
-
-
-

@@ -11,6 +11,7 @@
 
   <link  href="bower_components.css" rel="stylesheet">
   <link  href="../src/leaflet-multi-maps.css" rel="stylesheet">
+
   <style>
         .changeButton {
             position: absolute;
@@ -40,14 +41,19 @@
   </style>
 </head>
 
-<body  style="margin:0; padding:0; height:100%; width:100%">
+<body  style="margin:10px; padding:10px; height:90%; width:90%">
 <button class="changeButton">Click to change</button>
 <button class="iconButton" style="font-size:32px"><i class="famm-2-1-1"></i></button>
 
 <div id="my-multi-map-container" style="position: absolute; top:0; left:0; z-index:1">
 </div>
 
+<!-- <div class="multi-map-body" style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box">
+    <div id="my-mini-multi-map-container"></div>
+</div>
+ -->
 <div id="my-mini-multi-map-container" style="position: absolute; right:10px; top:10px; z-index:1; box-sizing: border-box"></div>
+
 <div id="my-mini-multi-map-container2" style="position: absolute; right:10px; bottom:10px; z-index:1; box-sizing: border-box"></div>
     <script src="bower_components.js"></script>
 	<script src="../src/leaflet-multi-maps.js"></script>
@@ -55,14 +61,15 @@
     $(function() {
         var testState = 0,
             myMultiMaps = L.multiMaps( '#my-multi-map-container', {
-                border : false,
+                border : true, //false,
                 maxMaps: 5,
 //Only test update: function( index, map, $container ){ $container.css({'text-align': 'center', 'border':'1px solid black'}).html( index );}
 
             } ),
             myMiniMultiMaps = L.multiMaps(
                 $('#my-mini-multi-map-container'), {
-                    update: function( index, map, $container ){ $container.css('text-align', 'center').html( index );}
+                    update: function( index, map, $container ){ $container.css('text-align', 'center').html( ''+index );},
+                    local: true
                 }),
             myMiniMultiMaps2 = L.multiMaps(
                 $('#my-mini-multi-map-container2'), {
@@ -117,6 +124,7 @@
             myMultiMaps.set( myMultiMaps.setupList[testIndex].id );
 
             myMiniMultiMaps.set( myMultiMaps.setupList[testIndex].id );
+
             myMiniMultiMaps2.set( myMultiMaps.setupList[testIndex].id );
 
             document.title = myMultiMaps.setupList[testIndex].id;

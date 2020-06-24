@@ -40,7 +40,31 @@ NAME  col#1  col#2  col#3  col#4  col#5
 2-3   = 3-2 + multi-map-reverse
 1-4   = 4-1 + multi-map-reverse
 
-The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <html class="multi-map-3-1">
+The selected setup is set by adding the class "multi-map-[NAME]" to body. E.g. <body class="multi-map-3-1">
+
+
+<html class="landscape OR portrait">
+    <body class="multi-map-[NAME]">
+        <div class="multi-map-outer-container">
+            <div class="multi-map-sub-container multi-map-1">
+                <div class="multi-map-container multi-map-1-1"></div>
+                <div class="multi-map-container multi-map-1-2"></div>
+                <div class="multi-map-container multi-map-1-3"></div>
+                <div class="multi-map-container multi-map-1-4"></div>
+            </div>
+            <div class="multi-map-container multi-map-2"></div>
+            <div class="multi-map-container multi-map-3"></div>
+            <div class="multi-map-container multi-map-4"></div>
+
+            <div class="multi-map-sub-container multi-map-5">
+                <div class="multi-map-container multi-map-5-1"></div>
+                <div class="multi-map-container multi-map-5-2"></div>
+            </div>
+        </div>
+    </body>
+</html
+
+
 */
 .multi-map-outer-container,
 .multi-map-sub-container {
@@ -60,42 +84,42 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
   .multi-map-sub-container:after {
     clear: both; }
 
-.landscape .multi-map-outer-container {
+html.landscape .multi-map-outer-container {
   flex-direction: row; }
 
-.landscape.multi-map-reverse .multi-map-outer-container {
+html.landscape.multi-map-reverse .multi-map-outer-container {
   flex-direction: row-reverse; }
 
-.portrait .multi-map-outer-container {
+html.portrait .multi-map-outer-container {
   flex-direction: column; }
 
-.portrait.multi-map-reverse .multi-map-outer-container {
+html.portrait.multi-map-reverse .multi-map-outer-container {
   flex-direction: column-reverse; }
 
-.landscape .multi-map-outer-container .multi-map-sub-container {
+html.landscape .multi-map-sub-container {
   flex-direction: column; }
 
-.portrait .multi-map-outer-container .multi-map-sub-container {
+html.portrait .multi-map-sub-container {
   flex-direction: row; }
 
-.landscape .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+html.landscape .multi-map-outer-container .multi-map-sub-container .multi-map-container {
   width: 100%;
   height: 50%; }
 
-.portrait .multi-map-outer-container .multi-map-sub-container .multi-map-container {
+html.portrait .multi-map-outer-container .multi-map-sub-container .multi-map-container {
   width: 50%;
   height: 100%; }
 
-.landscape[class*="multi-map-3"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
+html.landscape[class*="multi-map-3"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
   height: 33.3333333333%; }
 
-.portrait[class*="multi-map-3"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
+html.portrait[class*="multi-map-3"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
   width: 33.3333333333%; }
 
-.landscape[class*="multi-map-4"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
+html.landscape[class*="multi-map-4"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
   height: 25%; }
 
-.portrait[class*="multi-map-4"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
+html.portrait[class*="multi-map-4"] .multi-map-outer-container .multi-map-sub-container .multi-map-container[class*="multi-map-1"] {
   width: 25%; }
 
 .multi-map-outer-container .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3) {
@@ -114,160 +138,160 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
   margin: 0;
   padding: 0; }
 
-.landscape .multi-map-outer-container > .multi-map-container, .landscape .multi-map-outer-container > .multi-map-sub-container {
+html.landscape .multi-map-outer-container > .multi-map-container, html.landscape .multi-map-outer-container > .multi-map-sub-container {
   height: 100%; }
 
-.portrait .multi-map-outer-container > .multi-map-container, .portrait .multi-map-outer-container > .multi-map-sub-container {
+html.portrait .multi-map-outer-container > .multi-map-container, html.portrait .multi-map-outer-container > .multi-map-sub-container {
   width: 100%; }
 
-.multi-map-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 100%; }
 
-.multi-map-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 100%; }
 
-.multi-map-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 50%; }
 
-.multi-map-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 50%; }
 
-.multi-map-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.landscape.multi-map-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.landscape.multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   width: 50%; }
 
-.multi-map-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.portrait.multi-map-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.portrait.multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   height: 50%; }
 
-.multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 33.3333333333%; }
 
-.multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 33.3333333333%; }
 
-.multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.landscape.multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.landscape.multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   width: 33.3333333333%; }
 
-.multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.portrait.multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.portrait.multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   height: 33.3333333333%; }
 
-.multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-4, .multi-map-1-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
+html.landscape.multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.multi-map-4, html.landscape.multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
   width: 33.3333333333%; }
 
-.multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-4, .multi-map-1-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
+html.portrait.multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.multi-map-4, html.portrait.multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-4 {
   height: 33.3333333333%; }
 
-.multi-map-2-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-2-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 33.3333333333%; }
 
-.multi-map-2-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-2-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 33.3333333333%; }
 
-.multi-map-2-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-2-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 66.6666666667%; }
 
-.multi-map-2-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-2-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 66.6666666667%; }
 
-.multi-map-3-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-3-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 25%; }
 
-.multi-map-3-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-3-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 25%; }
 
-.multi-map-3-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-3-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 75%; }
 
-.multi-map-3-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-3-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 75%; }
 
-.multi-map-2-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 50%; }
 
-.multi-map-2-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 50%; }
 
-.multi-map-2-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+html.landscape.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-5, html.landscape.multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   width: 50%; }
 
-.multi-map-2-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+html.portrait.multi-map-2-2 .multi-map-outer-container > .multi-map-container.multi-map-5, html.portrait.multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   height: 50%; }
 
-.multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 20%; }
 
-.multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 20%; }
 
-.multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 40%; }
 
-.multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 40%; }
 
-.multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-2-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.landscape.multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.landscape.multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   width: 40%; }
 
-.multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-2-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.portrait.multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.portrait.multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   height: 40%; }
 
-.multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 25%; }
 
-.multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 25%; }
 
-.multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 50%; }
 
-.multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 50%; }
 
-.multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+html.landscape.multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-5, html.landscape.multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   width: 25%; }
 
-.multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-2-1-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+html.portrait.multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.multi-map-5, html.portrait.multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   height: 25%; }
 
-.multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 14.2857142857%; }
 
-.multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 14.2857142857%; }
 
-.multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 42.8571428571%; }
 
-.multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 42.8571428571%; }
 
-.multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-3-1-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.landscape.multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.landscape.multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   width: 42.8571428571%; }
 
-.multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-3, .multi-map-3-1-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
+html.portrait.multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.multi-map-3, html.portrait.multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-3 {
   height: 42.8571428571%; }
 
-.multi-map-4-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-4-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-4-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 20%; }
 
-.multi-map-4-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-4-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-4-1 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 20%; }
 
-.multi-map-4-1.landscape .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-4-1.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.landscape.multi-map-4-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.landscape.multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   width: 80%; }
 
-.multi-map-4-1.portrait .multi-map-outer-container > .multi-map-container.multi-map-2, .multi-map-4-1.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
+html.portrait.multi-map-4-1 .multi-map-outer-container > .multi-map-container.multi-map-2, html.portrait.multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.multi-map-2 {
   height: 80%; }
 
-.multi-map-3-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.landscape.multi-map-3-2 .multi-map-outer-container > .multi-map-container.multi-map-1, html.landscape.multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   width: 33.3333333333%; }
 
-.multi-map-3-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-1, .multi-map-3-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
+html.portrait.multi-map-3-2 .multi-map-outer-container > .multi-map-container.multi-map-1, html.portrait.multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
   height: 33.3333333333%; }
 
-.multi-map-3-2.landscape .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-3-2.landscape .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+html.landscape.multi-map-3-2 .multi-map-outer-container > .multi-map-container.multi-map-5, html.landscape.multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   width: 66.6666666667%; }
 
-.multi-map-3-2.portrait .multi-map-outer-container > .multi-map-container.multi-map-5, .multi-map-3-2.portrait .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
+html.portrait.multi-map-3-2 .multi-map-outer-container > .multi-map-container.multi-map-5, html.portrait.multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.multi-map-5 {
   height: 66.6666666667%; }
 
 [class*=' multi-map-1'] .multi-map-outer-container > .multi-map-container.multi-map-1, [class*=' multi-map-1'] .multi-map-outer-container > .multi-map-sub-container.multi-map-1 {
@@ -305,25 +329,25 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 
 .multi-map-outer-container:not(.no-border) {
   border: 1px solid black; }
-  .landscape:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), .landscape:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
+  html.landscape:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.landscape:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
     border-left: 1px solid black; }
-  .landscape.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), .landscape.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
+  html.landscape.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.landscape.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
     border-right: 1px solid black; }
-  .portrait:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), .portrait:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
+  html.portrait:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.portrait:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
     border-top: 1px solid black; }
-  .portrait.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), .portrait.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
+  html.portrait.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.portrait.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.multi-map-2):not(:first-child) {
     border-bottom: 1px solid black; }
-  .landscape:not(.multi-map-reverse):not(.multi-map-2-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
+  html.landscape:not(.multi-map-reverse):not(.multi-map-2-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
     border-right: 1px solid black; }
-  .landscape.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
+  html.landscape.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
     border-left: 1px solid black; }
-  .portrait:not(.multi-map-reverse):not(.multi-map-2-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
+  html.portrait:not(.multi-map-reverse):not(.multi-map-2-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
     border-bottom: 1px solid black; }
-  .portrait.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
+  html.portrait.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.multi-map-1 {
     border-top: 1px solid black; }
-  .landscape .multi-map-outer-container:not(.no-border) .multi-map-sub-container .multi-map-container:not(:first-child) {
+  html.landscape .multi-map-outer-container:not(.no-border) .multi-map-sub-container .multi-map-container:not(:first-child) {
     border-top: 1px solid black; }
-  .portrait .multi-map-outer-container:not(.no-border) .multi-map-sub-container .multi-map-container:not(:first-child) {
+  html.portrait .multi-map-outer-container:not(.no-border) .multi-map-sub-container .multi-map-container:not(:first-child) {
     border-left: 1px solid black; }
 
 /*******************************************************************
@@ -377,10 +401,10 @@ Copyed from _iconmoon/style.css
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale; }
 
-.famm-4-1-p:before, .portrait .famm-4-1:before {
+.famm-4-1-p:before, html.portrait .famm-4-1:before {
   content: ""; }
 
-.famm-1-4-p:before, .portrait .famm-1-4:before {
+.famm-1-4-p:before, html.portrait .famm-1-4:before {
   content: ""; }
 
 .famm-1-4:before {
@@ -389,10 +413,10 @@ Copyed from _iconmoon/style.css
 .famm-4-1:before {
   content: ""; }
 
-.famm-3-2-p:before, .portrait .famm-3-2:before {
+.famm-3-2-p:before, html.portrait .famm-3-2:before {
   content: ""; }
 
-.famm-2-3-p:before, .portrait .famm-2-3:before {
+.famm-2-3-p:before, html.portrait .famm-2-3:before {
   content: ""; }
 
 .famm-2-3:before {
@@ -404,10 +428,10 @@ Copyed from _iconmoon/style.css
 .famm-3-1-1:before {
   content: ""; }
 
-.famm-3-1-1-p:before, .portrait .famm-3-1-1:before {
+.famm-3-1-1-p:before, html.portrait .famm-3-1-1:before {
   content: ""; }
 
-.famm-1-1-3-p:before, .portrait .famm-1-1-3:before {
+.famm-1-1-3-p:before, html.portrait .famm-1-1-3:before {
   content: ""; }
 
 .famm-1-1-3:before {
@@ -416,19 +440,19 @@ Copyed from _iconmoon/style.css
 .famm-1:before {
   content: ""; }
 
-.famm-1-p:before, .portrait .famm-1:before {
+.famm-1-p:before, html.portrait .famm-1:before {
   content: ""; }
 
 .famm-1-1:before {
   content: ""; }
 
-.famm-1-1-p:before, .portrait .famm-1-1:before {
+.famm-1-1-p:before, html.portrait .famm-1-1:before {
   content: ""; }
 
 .famm-1-1-1:before {
   content: ""; }
 
-.famm-1-1-1-p:before, .portrait .famm-1-1-1:before {
+.famm-1-1-1-p:before, html.portrait .famm-1-1-1:before {
   content: ""; }
 
 .famm-2-1:before {
@@ -437,10 +461,10 @@ Copyed from _iconmoon/style.css
 .famm-1-2:before {
   content: ""; }
 
-.famm-1-2-p:before, .portrait .famm-1-2:before {
+.famm-1-2-p:before, html.portrait .famm-1-2:before {
   content: ""; }
 
-.famm-2-1-p:before, .portrait .famm-2-1:before {
+.famm-2-1-p:before, html.portrait .famm-2-1:before {
   content: ""; }
 
 .famm-2-1-1:before {
@@ -449,22 +473,22 @@ Copyed from _iconmoon/style.css
 .famm-1-1-2:before {
   content: ""; }
 
-.famm-1-1-2-p:before, .portrait .famm-1-1-2:before {
+.famm-1-1-2-p:before, html.portrait .famm-1-1-2:before {
   content: ""; }
 
-.famm-2-1-1-p:before, .portrait .famm-2-1-1:before {
+.famm-2-1-1-p:before, html.portrait .famm-2-1-1:before {
   content: ""; }
 
 .famm-2-1-2:before {
   content: ""; }
 
-.famm-2-1-2-p:before, .portrait .famm-2-1-2:before {
+.famm-2-1-2-p:before, html.portrait .famm-2-1-2:before {
   content: ""; }
 
 .famm-2-2:before {
   content: ""; }
 
-.famm-2-2-p:before, .portrait .famm-2-2:before {
+.famm-2-2-p:before, html.portrait .famm-2-2:before {
   content: ""; }
 
 .famm-3-1:before {
@@ -473,8 +497,721 @@ Copyed from _iconmoon/style.css
 .famm-1-3:before {
   content: ""; }
 
-.famm-1-3-p:before, .portrait .famm-1-3:before {
+.famm-1-3-p:before, html.portrait .famm-1-3:before {
   content: ""; }
 
-.famm-3-1-p:before, .portrait .famm-3-1:before {
+.famm-3-1-p:before, html.portrait .famm-3-1:before {
+  content: ""; }
+
+@charset "UTF-8";
+/***********************************************
+    leaflet-multi-maps.scss,
+
+    (c) 2016, FCOO
+
+    https://github.com/FCOO/leaflet-multi-maps
+    https://github.com/FCOO
+
+
+************************************************/
+/*
+css for different setups of maps.
+In landscape mode it is by columns. In portrait mode it is by rows.
+The order of the columns is changed when class 'multi-map-reverse' is added
+1. col     : 2-4 small maps
+2. - 4. col: 1 map
+5. col     : 2 small maps
+
+There are 17 different setups
+NAME  col#1  col#2  col#3  col#4  col#5
+----- ------ ------ ------ ------ ------
+1            show
+1-1          show   show
+1-1-1        show   show   show
+2-1   show 2 show
+3-1   show 3 show
+2-2   show 2                      show
+2-1-1 show 2 show   show
+2-1-2 show 2 show                 show
+3-1-1 show 3 show   show
+3-2   show 3                      show 2
+4-1   show 4 show
+
+
+1-2   = 2-1 + multi-map-reverse
+1-3   = 3-1 + multi-map-reverse
+1-1-2 = 2-1-1 + multi-map-reverse
+1-1-3 = 3-1-1 + multi-map-reverse
+2-3   = 3-2 + multi-map-reverse
+1-4   = 4-1 + multi-map-reverse
+
+The selected setup is set by adding the class "multi-map-[NAME]" to body. E.g. <body class="multi-map-3-1">
+
+
+<html class="landscape OR portrait">
+    <body class="multi-map-[NAME]">
+        <div class="multi-map-outer-container">
+            <div class="multi-map-sub-container multi-map-1">
+                <div class="multi-map-container multi-map-1-1"></div>
+                <div class="multi-map-container multi-map-1-2"></div>
+                <div class="multi-map-container multi-map-1-3"></div>
+                <div class="multi-map-container multi-map-1-4"></div>
+            </div>
+            <div class="multi-map-container multi-map-2"></div>
+            <div class="multi-map-container multi-map-3"></div>
+            <div class="multi-map-container multi-map-4"></div>
+
+            <div class="multi-map-sub-container multi-map-5">
+                <div class="multi-map-container multi-map-5-1"></div>
+                <div class="multi-map-container multi-map-5-2"></div>
+            </div>
+        </div>
+    </body>
+</html
+
+
+*/
+.multi-map-outer-container,
+.multi-map-sub-container {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden; }
+  .multi-map-outer-container:before, .multi-map-outer-container:after,
+  .multi-map-sub-container:before,
+  .multi-map-sub-container:after {
+    content: "";
+    display: block;
+    overflow: hidden; }
+  .multi-map-outer-container:after,
+  .multi-map-sub-container:after {
+    clear: both; }
+
+html.landscape body .multi-map-outer-container[class*="global-"] {
+  flex-direction: row; }
+
+html.landscape body.multi-map-reverse .multi-map-outer-container[class*="global-"] {
+  flex-direction: row-reverse; }
+
+html.portrait body .multi-map-outer-container[class*="global-"] {
+  flex-direction: column; }
+
+html.portrait body.multi-map-reverse .multi-map-outer-container[class*="global-"] {
+  flex-direction: column-reverse; }
+
+html.landscape .multi-map-body .multi-map-outer-container[class*="local-"] {
+  flex-direction: row; }
+
+html.landscape .multi-map-body.multi-map-reverse .multi-map-outer-container[class*="local-"] {
+  flex-direction: row-reverse; }
+
+html.portrait .multi-map-body .multi-map-outer-container[class*="local-"] {
+  flex-direction: column; }
+
+html.portrait .multi-map-body.multi-map-reverse .multi-map-outer-container[class*="local-"] {
+  flex-direction: column-reverse; }
+
+html.landscape .multi-map-sub-container {
+  flex-direction: column; }
+
+html.portrait .multi-map-sub-container {
+  flex-direction: row; }
+
+.multi-map-container, .multi-map-sub-container {
+  box-sizing: border-box;
+  flex: 0 0 auto; }
+
+.multi-map-container .leaflet-container {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0; }
+
+html.landscape .multi-map-sub-container .multi-map-container {
+  width: 100%;
+  height: 50%; }
+
+html.portrait .multi-map-sub-container .multi-map-container {
+  width: 50%;
+  height: 100%; }
+
+html.landscape body[class*="global-multi-map-3"] .multi-map-sub-container .multi-map-container[class*="global-multi-map-1"] {
+  height: 33.3333333333%; }
+
+html.landscape .multi-map-body[class*="local-multi-map-3"] .multi-map-sub-container .multi-map-container[class*="local-multi-map-1"] {
+  height: 33.3333333333%; }
+
+html.portrait body[class*="global-multi-map-3"] .multi-map-sub-container .multi-map-container[class*="global-multi-map-1"] {
+  width: 33.3333333333%; }
+
+html.portrait .multi-map-body[class*="local-multi-map-3"] .multi-map-sub-container .multi-map-container[class*="local-multi-map-1"] {
+  width: 33.3333333333%; }
+
+html.landscape body[class*="global-multi-map-4"] .multi-map-sub-container .multi-map-container[class*="global-multi-map-1"] {
+  height: 25%; }
+
+html.landscape .multi-map-body[class*="local-multi-map-4"] .multi-map-sub-container .multi-map-container[class*="local-multi-map-1"] {
+  height: 25%; }
+
+html.portrait body[class*="global-multi-map-4"] .multi-map-sub-container .multi-map-container[class*="global-multi-map-1"] {
+  width: 25%; }
+
+html.portrait .multi-map-body[class*="local-multi-map-4"] .multi-map-sub-container .multi-map-container[class*="local-multi-map-1"] {
+  width: 25%; }
+
+.multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3) {
+  display: none; }
+  body[class*="global-multi-map-3-"] .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3):nth-child(3),
+  .multi-map-body[class*="local-multi-map-3-"] .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3):nth-child(3),
+  body[class*="global-multi-map-4-"] .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3),
+  .multi-map-body[class*="local-multi-map-4-"] .multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3) {
+    display: block; }
+
+html.landscape .multi-map-outer-container > .multi-map-container, html.landscape .multi-map-outer-container > .multi-map-sub-container {
+  height: 100%; }
+
+html.portrait .multi-map-outer-container > .multi-map-container, html.portrait .multi-map-outer-container > .multi-map-sub-container {
+  width: 100%; }
+
+html.landscape body.global-multi-map-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 100%; }
+
+html.landscape .multi-map-body.local-multi-map-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 100%; }
+
+html.portrait body.global-multi-map-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 100%; }
+
+html.portrait .multi-map-body.local-multi-map-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 100%; }
+
+html.landscape body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 50%; }
+
+html.landscape .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 50%; }
+
+html.portrait body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 50%; }
+
+html.portrait .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 50%; }
+
+html.landscape body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.landscape body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  width: 50%; }
+
+html.landscape .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.landscape .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  width: 50%; }
+
+html.portrait body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.portrait body.global-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  height: 50%; }
+
+html.portrait .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.portrait .multi-map-body.local-multi-map-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  height: 50%; }
+
+html.landscape body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 33.3333333333%; }
+
+html.landscape .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 33.3333333333%; }
+
+html.portrait body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 33.3333333333%; }
+
+html.portrait .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 33.3333333333%; }
+
+html.landscape body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.landscape body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  width: 33.3333333333%; }
+
+html.landscape .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.landscape .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  width: 33.3333333333%; }
+
+html.portrait body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.portrait body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  height: 33.3333333333%; }
+
+html.portrait .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.portrait .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  height: 33.3333333333%; }
+
+html.landscape body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-4, html.landscape body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-4 {
+  width: 33.3333333333%; }
+
+html.landscape .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-4, html.landscape .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-4 {
+  width: 33.3333333333%; }
+
+html.portrait body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-4, html.portrait body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-4 {
+  height: 33.3333333333%; }
+
+html.portrait .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-4, html.portrait .multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-4 {
+  height: 33.3333333333%; }
+
+html.landscape body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 33.3333333333%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 33.3333333333%; }
+
+html.portrait body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 33.3333333333%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 33.3333333333%; }
+
+html.landscape body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 66.6666666667%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 66.6666666667%; }
+
+html.portrait body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 66.6666666667%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-2-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 66.6666666667%; }
+
+html.landscape body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 25%; }
+
+html.landscape .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 25%; }
+
+html.portrait body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 25%; }
+
+html.portrait .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 25%; }
+
+html.landscape body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 75%; }
+
+html.landscape .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 75%; }
+
+html.portrait body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 75%; }
+
+html.portrait .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-3-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 75%; }
+
+html.landscape body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 50%; }
+
+html.landscape .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 50%; }
+
+html.portrait body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 50%; }
+
+html.portrait .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 50%; }
+
+html.landscape body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5, html.landscape body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5 {
+  width: 50%; }
+
+html.landscape .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5, html.landscape .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  width: 50%; }
+
+html.portrait body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5, html.portrait body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5 {
+  height: 50%; }
+
+html.portrait .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5, html.portrait .multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  height: 50%; }
+
+html.landscape body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 20%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 20%; }
+
+html.portrait body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 20%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 20%; }
+
+html.landscape body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 40%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 40%; }
+
+html.portrait body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 40%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 40%; }
+
+html.landscape body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.landscape body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  width: 40%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.landscape .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  width: 40%; }
+
+html.portrait body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.portrait body.global-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  height: 40%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.portrait .multi-map-body.local-multi-map-2-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  height: 40%; }
+
+html.landscape body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 25%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 25%; }
+
+html.portrait body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 25%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 25%; }
+
+html.landscape body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 50%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 50%; }
+
+html.portrait body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 50%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 50%; }
+
+html.landscape body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5, html.landscape body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5 {
+  width: 25%; }
+
+html.landscape .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5, html.landscape .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  width: 25%; }
+
+html.portrait body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5, html.portrait body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5 {
+  height: 25%; }
+
+html.portrait .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5, html.portrait .multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  height: 25%; }
+
+html.landscape body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 14.2857142857%; }
+
+html.landscape .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 14.2857142857%; }
+
+html.portrait body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 14.2857142857%; }
+
+html.portrait .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 14.2857142857%; }
+
+html.landscape body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 42.8571428571%; }
+
+html.landscape .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 42.8571428571%; }
+
+html.portrait body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 42.8571428571%; }
+
+html.portrait .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 42.8571428571%; }
+
+html.landscape body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.landscape body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  width: 42.8571428571%; }
+
+html.landscape .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.landscape .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  width: 42.8571428571%; }
+
+html.portrait body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-3, html.portrait body.global-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3 {
+  height: 42.8571428571%; }
+
+html.portrait .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-3, html.portrait .multi-map-body.local-multi-map-3-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  height: 42.8571428571%; }
+
+html.landscape body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 20%; }
+
+html.landscape .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 20%; }
+
+html.portrait body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 20%; }
+
+html.portrait .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 20%; }
+
+html.landscape body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.landscape body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  width: 80%; }
+
+html.landscape .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.landscape .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  width: 80%; }
+
+html.portrait body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-container.global-multi-map-2, html.portrait body.global-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2 {
+  height: 80%; }
+
+html.portrait .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-container.local-multi-map-2, html.portrait .multi-map-body.local-multi-map-4-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  height: 80%; }
+
+html.landscape body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.landscape body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  width: 33.3333333333%; }
+
+html.landscape .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.landscape .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  width: 33.3333333333%; }
+
+html.portrait body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-container.global-multi-map-1, html.portrait body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1 {
+  height: 33.3333333333%; }
+
+html.portrait .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-container.local-multi-map-1, html.portrait .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  height: 33.3333333333%; }
+
+html.landscape body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5, html.landscape body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5 {
+  width: 66.6666666667%; }
+
+html.landscape .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5, html.landscape .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  width: 66.6666666667%; }
+
+html.portrait body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5, html.portrait body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5 {
+  height: 66.6666666667%; }
+
+html.portrait .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5, html.portrait .multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  height: 66.6666666667%; }
+
+body[class*='global-multi-map-1'] .multi-map-outer-container > .multi-map-container.global-multi-map-1,
+.multi-map-body[class*='local-multi-map-1'] .multi-map-outer-container > .multi-map-container.local-multi-map-1, body[class*='global-multi-map-1'] .multi-map-outer-container > .multi-map-sub-container.global-multi-map-1,
+.multi-map-body[class*='local-multi-map-1'] .multi-map-outer-container > .multi-map-sub-container.local-multi-map-1 {
+  display: none; }
+
+body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-container.global-multi-map-2,
+.multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-container.local-multi-map-2,
+body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-container.global-multi-map-2,
+.multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-container.local-multi-map-2, body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2,
+.multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2,
+body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-2,
+.multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-2 {
+  display: none; }
+
+.multi-map-outer-container > .multi-map-container.global-multi-map-3, .multi-map-outer-container > .multi-map-container.local-multi-map-3, .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3, .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  display: none; }
+
+body[class*='global-multi-map-'][class*='1-1'] .multi-map-outer-container > .multi-map-container.global-multi-map-3,
+.multi-map-body[class*='local-multi-map-'][class*='1-1'] .multi-map-outer-container > .multi-map-container.local-multi-map-3, body[class*='global-multi-map-'][class*='1-1'] .multi-map-outer-container > .multi-map-sub-container.global-multi-map-3,
+.multi-map-body[class*='local-multi-map-'][class*='1-1'] .multi-map-outer-container > .multi-map-sub-container.local-multi-map-3 {
+  display: block; }
+
+.multi-map-outer-container > .multi-map-container.global-multi-map-4, .multi-map-outer-container > .multi-map-container.local-multi-map-4, .multi-map-outer-container > .multi-map-sub-container.global-multi-map-4, .multi-map-outer-container > .multi-map-sub-container.local-multi-map-4 {
+  display: none; }
+
+body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.global-multi-map-4,
+.multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-container.local-multi-map-4, body.global-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-4,
+.multi-map-body.local-multi-map-1-1-1 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-4 {
+  display: block; }
+
+.multi-map-outer-container > .multi-map-container.global-multi-map-5, .multi-map-outer-container > .multi-map-container.local-multi-map-5, .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5, .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  display: none; }
+
+body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5,
+.multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5,
+body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5,
+.multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5,
+body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-container.global-multi-map-5,
+.multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-container.local-multi-map-5, body.global-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5,
+.multi-map-body.local-multi-map-2-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5,
+body.global-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5,
+.multi-map-body.local-multi-map-2-1-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5,
+body.global-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.global-multi-map-5,
+.multi-map-body.local-multi-map-3-2 .multi-map-outer-container > .multi-map-sub-container.local-multi-map-5 {
+  display: flex; }
+
+.multi-map-outer-container .leaflet-container {
+  box-sizing: border-box; }
+
+.multi-map-outer-container:not(.no-border) {
+  border: 1px solid black; }
+  html.landscape body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.landscape body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container[class*='global-']:not(.global-multi-map-2):not(:first-child) {
+    border-left: 1px solid black; }
+  html.landscape body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.landscape body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container[class*='global-']:not(.global-multi-map-2):not(:first-child) {
+    border-right: 1px solid black; }
+  html.portrait body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.portrait body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container[class*='global-']:not(.global-multi-map-2):not(:first-child) {
+    border-top: 1px solid black; }
+  html.portrait body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.portrait body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container[class*='global-']:not(.global-multi-map-2):not(:first-child) {
+    border-bottom: 1px solid black; }
+  html.landscape .multi-map-body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.landscape .multi-map-body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.local-multi-map-2):not(:first-child) {
+    border-left: 1px solid black; }
+  html.landscape .multi-map-body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.landscape .multi-map-body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.local-multi-map-2):not(:first-child) {
+    border-right: 1px solid black; }
+  html.portrait .multi-map-body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.portrait .multi-map-body:not(.multi-map-reverse) .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.local-multi-map-2):not(:first-child) {
+    border-top: 1px solid black; }
+  html.portrait .multi-map-body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-sub-container:not(:first-child), html.portrait .multi-map-body.multi-map-reverse .multi-map-outer-container:not(.no-border) > .multi-map-container:not(.local-multi-map-2):not(:first-child) {
+    border-bottom: 1px solid black; }
+  html.landscape body:not(.multi-map-reverse):not(.global-multi-map-2-2):not(.global-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.global-multi-map-1 {
+    border-right: 1px solid black; }
+  html.landscape body.multi-map-reverse:not(.global-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.global-multi-map-1 {
+    border-left: 1px solid black; }
+  html.portrait body:not(.multi-map-reverse):not(.global-multi-map-2-2):not(.global-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.global-multi-map-1 {
+    border-bottom: 1px solid black; }
+  html.portrait body.multi-map-reverse:not(.global-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.global-multi-map-1 {
+    border-top: 1px solid black; }
+  html.landscape .multi-map-body:not(.multi-map-reverse):not(.local-multi-map-2-2):not(.local-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.local-multi-map-1 {
+    border-right: 1px solid black; }
+  html.landscape .multi-map-body.multi-map-reverse:not(.local-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.local-multi-map-1 {
+    border-left: 1px solid black; }
+  html.portrait .multi-map-body:not(.multi-map-reverse):not(.local-multi-map-2-2):not(.local-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.local-multi-map-1 {
+    border-bottom: 1px solid black; }
+  html.portrait .multi-map-body.multi-map-reverse:not(.local-multi-map-3-2) .multi-map-outer-container:not(.no-border) > .multi-map-sub-container.local-multi-map-1 {
+    border-top: 1px solid black; }
+  html.landscape .multi-map-outer-container:not(.no-border) .multi-map-sub-container .multi-map-container:not(:first-child) {
+    border-top: 1px solid black; }
+  html.portrait .multi-map-outer-container:not(.no-border) .multi-map-sub-container .multi-map-container:not(:first-child) {
+    border-left: 1px solid black; }
+
+/*******************************************************************
+********************************************************************
+ICON-FONT WITH MULTI-MAPS
+Copyed from _iconmoon/style.css
+********************************************************************
+********************************************************************/
+/*
+@font-face {
+  font-family: 'leaflet-multi-maps';
+  src:
+    url('fonts/leaflet-multi-maps.ttf?3279cz') format('truetype'),
+    url('fonts/leaflet-multi-maps.woff?3279cz') format('woff'),
+    url('fonts/leaflet-multi-maps.svg?3279cz#leaflet-multi-maps') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^="famm-"], [class*=" famm-"] {
+  font-family: 'leaflet-multi-maps' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+*/
+@font-face {
+  font-family: "leaflet-multi-maps";
+  src: url("fonts/leaflet-multi-maps.ttf?3279cz") format("truetype"), url("fonts/leaflet-multi-maps.woff?3279cz") format("woff"), url("fonts/leaflet-multi-maps.svg?3279cz#leaflet-multi-maps") format("svg");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block; }
+
+[class^="famm-"], [class*=" famm-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: "leaflet-multi-maps" !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; }
+
+.famm-4-1-p:before, html.portrait .famm-4-1:before {
+  content: ""; }
+
+.famm-1-4-p:before, html.portrait .famm-1-4:before {
+  content: ""; }
+
+.famm-1-4:before {
+  content: ""; }
+
+.famm-4-1:before {
+  content: ""; }
+
+.famm-3-2-p:before, html.portrait .famm-3-2:before {
+  content: ""; }
+
+.famm-2-3-p:before, html.portrait .famm-2-3:before {
+  content: ""; }
+
+.famm-2-3:before {
+  content: ""; }
+
+.famm-3-2:before {
+  content: ""; }
+
+.famm-3-1-1:before {
+  content: ""; }
+
+.famm-3-1-1-p:before, html.portrait .famm-3-1-1:before {
+  content: ""; }
+
+.famm-1-1-3-p:before, html.portrait .famm-1-1-3:before {
+  content: ""; }
+
+.famm-1-1-3:before {
+  content: ""; }
+
+.famm-1:before {
+  content: ""; }
+
+.famm-1-p:before, html.portrait .famm-1:before {
+  content: ""; }
+
+.famm-1-1:before {
+  content: ""; }
+
+.famm-1-1-p:before, html.portrait .famm-1-1:before {
+  content: ""; }
+
+.famm-1-1-1:before {
+  content: ""; }
+
+.famm-1-1-1-p:before, html.portrait .famm-1-1-1:before {
+  content: ""; }
+
+.famm-2-1:before {
+  content: ""; }
+
+.famm-1-2:before {
+  content: ""; }
+
+.famm-1-2-p:before, html.portrait .famm-1-2:before {
+  content: ""; }
+
+.famm-2-1-p:before, html.portrait .famm-2-1:before {
+  content: ""; }
+
+.famm-2-1-1:before {
+  content: ""; }
+
+.famm-1-1-2:before {
+  content: ""; }
+
+.famm-1-1-2-p:before, html.portrait .famm-1-1-2:before {
+  content: ""; }
+
+.famm-2-1-1-p:before, html.portrait .famm-2-1-1:before {
+  content: ""; }
+
+.famm-2-1-2:before {
+  content: ""; }
+
+.famm-2-1-2-p:before, html.portrait .famm-2-1-2:before {
+  content: ""; }
+
+.famm-2-2:before {
+  content: ""; }
+
+.famm-2-2-p:before, html.portrait .famm-2-2:before {
+  content: ""; }
+
+.famm-3-1:before {
+  content: ""; }
+
+.famm-1-3:before {
+  content: ""; }
+
+.famm-1-3-p:before, html.portrait .famm-1-3:before {
+  content: ""; }
+
+.famm-3-1-p:before, html.portrait .famm-3-1:before {
   content: ""; }

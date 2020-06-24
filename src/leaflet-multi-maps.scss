@@ -48,7 +48,31 @@ NAME  col#1  col#2  col#3  col#4  col#5
 2-3   = 3-2 + multi-map-reverse
 1-4   = 4-1 + multi-map-reverse
 
-The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <html class="multi-map-3-1">
+The selected setup is set by adding the class "multi-map-[NAME]" to body. E.g. <body class="multi-map-3-1">
+
+
+<html class="landscape OR portrait">
+    <body class="multi-map-[NAME]">
+        <div class="multi-map-outer-container">
+            <div class="multi-map-sub-container multi-map-1">
+                <div class="multi-map-container multi-map-1-1"></div>
+                <div class="multi-map-container multi-map-1-2"></div>
+                <div class="multi-map-container multi-map-1-3"></div>
+                <div class="multi-map-container multi-map-1-4"></div>
+            </div>
+            <div class="multi-map-container multi-map-2"></div>
+            <div class="multi-map-container multi-map-3"></div>
+            <div class="multi-map-container multi-map-4"></div>
+
+            <div class="multi-map-sub-container multi-map-5">
+                <div class="multi-map-container multi-map-5-1"></div>
+                <div class="multi-map-container multi-map-5-2"></div>
+            </div>
+        </div>
+    </body>
+</html
+
+
 */
 
 
@@ -73,61 +97,86 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 
 }
 
+//flex-direction
 .multi-map-outer-container {
-    .landscape                   & { flex-direction: row;}
-    .landscape.multi-map-reverse & { flex-direction: row-reverse;}
-    .portrait                    & { flex-direction: column;}
-    .portrait.multi-map-reverse  & { flex-direction: column-reverse;}
+    html.landscape body                    &[class*="global-"] { flex-direction: row;}
+    html.landscape body.multi-map-reverse  &[class*="global-"] { flex-direction: row-reverse;}
+    html.portrait  body                    &[class*="global-"] { flex-direction: column;}
+    html.portrait  body.multi-map-reverse  &[class*="global-"] { flex-direction: column-reverse;}
 
-    .multi-map-sub-container {
-        .landscape & { flex-direction: column;}
-        .portrait  & { flex-direction: row;}
+    html.landscape .multi-map-body                    &[class*="local-"] { flex-direction: row;}
+    html.landscape .multi-map-body.multi-map-reverse  &[class*="local-"] { flex-direction: row-reverse;}
+    html.portrait  .multi-map-body                    &[class*="local-"] { flex-direction: column;}
+    html.portrait  .multi-map-body.multi-map-reverse  &[class*="local-"] { flex-direction: column-reverse;}
+}
 
-        .multi-map-container {
-            .landscape & {
-                width : ( 100% / 1);
-                height: ( 100% / 2);
-             }
-            .portrait & {
-                width : ( 100% / 2);
-                height: ( 100% / 1);
-            }
+.multi-map-sub-container {
+    html.landscape & { flex-direction: column;}
+    html.portrait  & { flex-direction: row;   }
+}
 
-            //Dim of small maps in first column
-            .landscape[class*="multi-map-3"] &[class*="multi-map-1"] { height: ( 100% / 3); }
-            .portrait[class*="multi-map-3"]  &[class*="multi-map-1"] { width : ( 100% / 3); }
 
-            .landscape[class*="multi-map-4"] &[class*="multi-map-1"] { height: ( 100% / 4); }
-            .portrait[class*="multi-map-4"]  &[class*="multi-map-1"] { width : ( 100% / 4); }
-        }
-        //For N >= 3: Nth mini-map in first coloum is only visible on multi-map-N+
-        &:first-child .multi-map-container:nth-child(n + 3) {
-            display: none;
-            [class*="multi-map-3-"] &:nth-child(3),
-            [class*="multi-map-4-"] &               {
-                display: block;
-            }
-        }
+//General style
+.multi-map-container, .multi-map-sub-container {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+}
+.multi-map-container .leaflet-container {
+    width: 100%; height:100%; margin: 0; padding: 0;
+}
+
+
+//Dimensions of multi-map-container when inside col#1 or col#4
+.multi-map-sub-container .multi-map-container {
+    html.landscape & {
+        width : ( 100% / 1);
+        height: ( 100% / 2);
+    }
+    html.portrait & {
+        width : ( 100% / 2);
+        height: ( 100% / 1);
     }
 
+    //Dim of small maps in first column
+    html.landscape body[class*="global-multi-map-3"]            &[class*="global-multi-map-1"] { height: ( 100% / 3); }
+    html.landscape .multi-map-body[class*="local-multi-map-3"]  &[class*="local-multi-map-1"] { height: ( 100% / 3); }
 
-    .multi-map-container, .multi-map-sub-container {
-        box-sizing: border-box;
-        flex: 0 0 auto;
+    html.portrait  body[class*="global-multi-map-3"]            &[class*="global-multi-map-1"] { width : ( 100% / 3); }
+    html.portrait  .multi-map-body[class*="local-multi-map-3"]  &[class*="local-multi-map-1"] { width : ( 100% / 3); }
+
+    html.landscape body[class*="global-multi-map-4"]            &[class*="global-multi-map-1"] { height: ( 100% / 4); }
+    html.landscape .multi-map-body[class*="local-multi-map-4"]  &[class*="local-multi-map-1"] { height: ( 100% / 4); }
+
+    html.portrait  body[class*="global-multi-map-4"]            &[class*="global-multi-map-1"] { width : ( 100% / 4); }
+    html.portrait  .multi-map-body[class*="local-multi-map-4"]  &[class*="local-multi-map-1"] { width : ( 100% / 4); }
+}
+
+//For N >= 3: Nth mini-map in first column is only visible on multi-map-N+
+.multi-map-sub-container:first-child .multi-map-container:nth-child(n + 3) {
+    display: none;
+
+    body[class*="global-multi-map-3-"] &:nth-child(3),
+    .multi-map-body[class*="local-multi-map-3-"] &:nth-child(3),
+
+    body[class*="global-multi-map-4-"] &,
+    .multi-map-body[class*="local-multi-map-4-"] & {
+        display: block;
     }
+}
 
-    .multi-map-container .leaflet-container {
-        width: 100%; height:100%; margin: 0; padding: 0;
-    }
-
+//Dimensions of multi-map-container when inside col#2 or col#3 and multi-map-sub-container when inside col#1 or col#4
+.multi-map-outer-container {
     >.multi-map-container, >.multi-map-sub-container {
         //Default width and height
-        .landscape & { height: 100%; }
-        .portrait  & { width : 100%; }
+        html.landscape & { height: 100%; }
+        html.portrait  & { width : 100%; }
 
         @mixin dimention($multi-map-style, $multi-map-class, $quotients, $denominator) {
-            .#{$multi-map-style}.landscape &.#{$multi-map-class} { width : ($quotients / $denominator * 100% ); }
-            .#{$multi-map-style}.portrait &.#{$multi-map-class}  { height: ($quotients / $denominator * 100% ); }
+            html.landscape body.#{'global-' + $multi-map-style}           &.#{'global-' + $multi-map-class} { width : ($quotients / $denominator * 100% ); }
+            html.landscape .multi-map-body.#{'local-' + $multi-map-style} &.#{'local-' + $multi-map-class } { width : ($quotients / $denominator * 100% ); }
+
+            html.portrait  body.#{'global-' + $multi-map-style}           &.#{'global-' + $multi-map-class} { height: ($quotients / $denominator * 100% ); }
+            html.portrait  .multi-map-body.#{'local-' + $multi-map-style} &.#{'local-' + $multi-map-class } { height: ($quotients / $denominator * 100% ); }
         }
 
         //multi-map-1
@@ -182,27 +231,40 @@ The selected setup is set by adding the class "multi-map-[NAME]" to html. E.g. <
 
         //Display
         //1. col: hidden for any 1-x-y
-        [class*=' multi-map-1'] &.multi-map-1 { display: none }
+        body[class*='global-multi-map-1']           &.global-multi-map-1,
+        .multi-map-body[class*='local-multi-map-1'] &.local-multi-map-1 {
+            display: none;
+        }
 
         //2. col: Only hidden for multi-map-2-2 and multi-map-3-2
-        .multi-map-2-2 &.multi-map-2,
-        .multi-map-3-2 &.multi-map-2 { display: none }
+        body.global-multi-map-2-2           &.global-multi-map-2,
+        .multi-map-body.local-multi-map-2-2 &.local-multi-map-2,
+
+        body.global-multi-map-3-2           &.global-multi-map-2,
+        .multi-map-body.local-multi-map-3-2 &.local-multi-map-2 {
+            display: none;
+        }
 
         //3. col: Hidden except for 1-1, 1-1-1, 2-1-1
-        &.multi-map-3 {display: none; }
-        [class*=' multi-map-'][class*='1-1'] &.multi-map-3 { display: block }
+        &.global-multi-map-3, &.local-multi-map-3 { display: none; }
+        body[class*='global-multi-map-'][class*='1-1']           &.global-multi-map-3,
+        .multi-map-body[class*='local-multi-map-'][class*='1-1'] &.local-multi-map-3 { display: block }
 
         //4. col: Hidden except for 1-1-1
-        &.multi-map-4 {display: none; }
-        .multi-map-1-1-1 &.multi-map-4 { display: block }
+        &.global-multi-map-4, &.local-multi-map-4 {display: none; }
+        body.global-multi-map-1-1-1           &.global-multi-map-4,
+        .multi-map-body.local-multi-map-1-1-1 &.local-multi-map-4 { display: block }
 
         //5. col: Hidden except for 2-2, 2-1-2, 3-2
-        &.multi-map-5 {display: none; }
-        .multi-map-2-2   &.multi-map-5,
-        .multi-map-2-1-2 &.multi-map-5,
-        .multi-map-3-2 &.multi-map-5 { display: flex }
-    }
+        &.global-multi-map-5, &.local-multi-map-5 {display: none; }
+        body.global-multi-map-2-2           &.global-multi-map-5,
+        .multi-map-body.local-multi-map-2-2 &.local-multi-map-5,
 
+        body.global-multi-map-2-1-2           &.global-multi-map-5,
+        .multi-map-body.local-multi-map-2-1-2 &.local-multi-map-5,
+        body.global-multi-map-3-2             &.global-multi-map-5,
+        .multi-map-body.local-multi-map-3-2   &.local-multi-map-5 { display: flex }
+    }
 
     & .leaflet-container {
         box-sizing: border-box;
@@ -215,25 +277,39 @@ $border: 1px solid black;
 .multi-map-outer-container:not(.no-border) {
     border: $border;
 
-    >.multi-map-sub-container, >.multi-map-container:not(.multi-map-2) {
-        .landscape:not(.multi-map-reverse) &:not(:first-child) { border-left  : $border; }
-        .landscape.multi-map-reverse       &:not(:first-child) { border-right : $border; }
-        .portrait:not(.multi-map-reverse)  &:not(:first-child) { border-top   : $border; }
-        .portrait.multi-map-reverse        &:not(:first-child) { border-bottom: $border; }
+    >.multi-map-sub-container, >.multi-map-container[class*='global-']:not(.global-multi-map-2) {
+        html.landscape body:not(.multi-map-reverse) &:not(:first-child) { border-left  : $border; }
+        html.landscape body.multi-map-reverse       &:not(:first-child) { border-right : $border; }
+        html.portrait  body:not(.multi-map-reverse) &:not(:first-child) { border-top   : $border; }
+        html.portrait  body.multi-map-reverse       &:not(:first-child) { border-bottom: $border; }
+    }
+    >.multi-map-sub-container, >.multi-map-container:not(.local-multi-map-2) {
+        html.landscape .multi-map-body:not(.multi-map-reverse) &:not(:first-child) { border-left  : $border; }
+        html.landscape .multi-map-body.multi-map-reverse       &:not(:first-child) { border-right : $border; }
+        html.portrait  .multi-map-body:not(.multi-map-reverse) &:not(:first-child) { border-top   : $border; }
+        html.portrait  .multi-map-body.multi-map-reverse       &:not(:first-child) { border-bottom: $border; }
     }
 
-    //Special case for multi-map-sub-container multi-map-1: Is the first child and must have border to neighbor except in 2-2 mode
-    & >.multi-map-sub-container.multi-map-1 {
-        .landscape:not(.multi-map-reverse):not(.multi-map-2-2 ) & { border-right : $border; }
-        .landscape.multi-map-reverse                            & { border-left  : $border; }
-        .portrait:not(.multi-map-reverse):not(.multi-map-2-2 )  & { border-bottom: $border; }
-        .portrait.multi-map-reverse                             & { border-top   : $border; }
+    //Special case for multi-map-sub-container multi-map-1: Is the first child and must have border to neighbor except in 2-2, 3-2 and 2-3 mode
+    & >.multi-map-sub-container.global-multi-map-1 {
+        html.landscape body:not(.multi-map-reverse):not(.global-multi-map-2-2 ):not(.global-multi-map-3-2 ) & { border-right : $border; }
+        html.landscape body.multi-map-reverse:not(.global-multi-map-3-2 )                                   & { border-left  : $border; }
+        html.portrait  body:not(.multi-map-reverse):not(.global-multi-map-2-2 ):not(.global-multi-map-3-2 ) & { border-bottom: $border; }
+        html.portrait  body.multi-map-reverse:not(.global-multi-map-3-2 )                                   & { border-top   : $border; }
     }
+
+    & >.multi-map-sub-container.local-multi-map-1 {
+        html.landscape .multi-map-body:not(.multi-map-reverse):not(.local-multi-map-2-2 ):not(.local-multi-map-3-2 ) & { border-right : $border; }
+        html.landscape .multi-map-body.multi-map-reverse:not(.local-multi-map-3-2 )                                  & { border-left  : $border; }
+        html.portrait  .multi-map-body:not(.multi-map-reverse):not(.local-multi-map-2-2 ):not(.local-multi-map-3-2 ) & { border-bottom: $border; }
+        html.portrait  .multi-map-body.multi-map-reverse:not(.local-multi-map-3-2 )                                  & { border-top   : $border; }
+    }
+
 
     //Inner borders between the small maps
     .multi-map-sub-container .multi-map-container {
-        .landscape &:not(:first-child) { border-top: $border; }
-        .portrait &:not(:first-child) { border-left: $border; }
+        html.landscape &:not(:first-child) { border-top: $border; }
+        html.portrait  &:not(:first-child) { border-left: $border; }
     }
 }
 
@@ -297,5 +373,5 @@ $multiMapsSetups:
 
 
 @each $id in $multiMapsSetups {
-    .portrait .famm-#{$id}{ @extend .famm-#{$id}-p; }
+    html.portrait .famm-#{$id}{ @extend .famm-#{$id}-p; }
 }
