@@ -81,7 +81,7 @@ NAME  col#1  col#2  col#3  col#4  col#5
 
         //Default options
         options: {
-            VERSION: "2.0.1",
+            VERSION: "2.0.2",
             id     : defaultId,
             border : true,
             local  : false,
