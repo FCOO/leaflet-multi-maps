@@ -1,6 +1,6 @@
 {
   "name": "leaflet-multi-maps",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "homepage": "https://github.com/FCOO/leaflet-multi-maps",
   "authors": [
     "Niels Holt"
@@ -16,8 +16,7 @@
   },
   "dependencies": {
     "jquery": "latest",
-    "leaflet": "latest",
-    "leaflet-bugfix": "fcoo/leaflet-bugfix#^2.0.2",
+    "leaflet-bower-bugfix-switches": "fcoo/leaflet-bower-bugfix-switches#latest",
     "modernizr-mediaquery": "fcoo/modernizr-mediaquery#latest",
     "modernizr-device": "fcoo/modernizr-device#latest",
     "jquery-screen-ratio": "fcoo/jquery-screen-ratio#latest"
